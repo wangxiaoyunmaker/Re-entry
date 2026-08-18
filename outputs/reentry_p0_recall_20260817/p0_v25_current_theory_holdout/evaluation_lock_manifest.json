@@ -1,0 +1,22 @@
+{
+  "status": "PROMPT_LOCKED_LABELS_CORRECTED_AFTER_REVIEW",
+  "reference_status": "CURRENT_THEORY_SINGLE_CODER_PROVISIONAL",
+  "candidate_count": 20,
+  "reference_distribution": {"RETAIN_STRONG":8,"RETAIN_POSSIBLE":1,"DO_NOT_RETAIN":11},
+  "label_correction": {
+    "holdout_ids": ["V25H-013", "V25H-014"],
+    "from": "RETAIN_POSSIBLE",
+    "to": "DO_NOT_RETAIN",
+    "reason": "Strict Re-entry boundary: ordinary post-delivery refinement and isolated layout request without Agent-instantiated state. Prompt and model outputs were not changed."
+  },
+  "prompt_change_basis": "The v2.5 hybrid was specified from v2.3/v2.4 errors before model execution: retain v2.3 recall, exclude only direct input answers, user-owned artifact selection, and explicit-success handoffs; safeguard original-artifact mismatch and runtime failures during active Agent testing.",
+  "files": {
+    "system": {"path":"/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_1_candidate/system.txt","sha256":"8d28925147c348cdd94e0952b9e86b085e1b7ae84c16fb53f4ce10ce67e70cd6"},
+    "developer_base": {"path":"/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_3_candidate/developer_gate_v23.xml","sha256":"9966ce2b18c052d3884868b42c7c0aec399c2b520c2906aa2f404fb9a8ca494f"},
+    "developer_addendum": {"path":"/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_5_candidate/developer_gate_v25_addendum.xml","sha256":"3ed8b9d73e9f70dd5fe7e184473185c2ce0c051eed820c7df3406bcdde5a26cf"},
+    "few_shot": {"path":"/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_1_candidate/few_shot_gate_v21.xml","sha256":"f5fe91e197744d8293448934530956c61408dbe79a10b1053101104aa4b67207"},
+    "candidates": {"path":"/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260817/p0_v25_current_theory_holdout/locked_candidates_20.jsonl","sha256":"3e8aa113a1b27e7a6949967c8db9c03aa5ca39a9d52f197b2c3b45f586b299a4"},
+    "human_adjudication": {"path":"/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260817/p0_v25_current_theory_holdout/human_adjudication_coder1.json","sha256":"abcde36ff19c6ffdc440d0a099afab998d22c4780ed2ceb07cc15fba15c79f8e"},
+    "evaluation": {"path":"/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260817/p0_v25_current_theory_holdout/locked_evaluation_20.jsonl","sha256":"20fc8578904cb9c53818b081661f3a2eb01a80f8b65293f9dd76be5cb40616d9"}
+  }
+}

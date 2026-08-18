@@ -1,0 +1,57 @@
+<task_specification version="p0-v2.3-gated">
+  <task>Return exactly one verdict for every target_user_event_id. For each target, apply Gate 1, then Gate 2, then Gate 3. Do not jump from keywords such as fix, change, retry, current, boundary, or continue directly to retention.</task>
+
+  <ordered_gates>
+    <gate id="G1" name="Related Agent-instantiated project state">
+      <state_scope>Project state includes code and runtime behavior, but also Agent-created or Agent-modified documentation, configuration, data/schema, generated artifacts, file organization, tests, and recorded implementation decisions.</state_scope>
+      <pass_explicit>The preceding trace shows that an Agent or tool inspected, modified, ran, tested, organized, generated, or made an implementation claim about the same project object addressed by the target.</pass_explicit>
+      <pass_inferred>The target itself may establish a plausible prior state when it concretely presupposes an existing implementation or artifact: “the current prototype”, “what you implemented”, “after your fix”, “it is still/again…”, an observed current behavior, or a factual correction of existing project content. When preceding state evidence is absent or truncated, normally cap the verdict at RETAIN_POSSIBLE.</pass_inferred>
+      <insufficient>A project name, attachment, desired feature, imperative, or statement that work should begin does not by itself establish a related Agent-instantiated state.</insufficient>
+      <service_exclusion>API safeguards, rate limits, OAuth/MCP connection failures, context limits, model unavailability, and generic tool/service errors are not project-state evidence by themselves.</service_exclusion>
+      <rule>If neither explicit nor plausible target-internal state evidence exists, output DO_NOT_RETAIN.</rule>
+    </gate>
+
+    <gate id="G2" name="Problem in that state rather than ordinary project continuation">
+      <pass>The target reports, corrects, or plausibly questions a failure, factual or semantic mismatch, regression, incomplete or contradicted completion, obsolete state, uncertain implemented behavior, unreliable evidence, implementation/history relation, risky modification boundary, or an explicit conflict between a new change and the current implementation.</pass>
+      <state_problem_evidence>Look for a contrast between current and acceptable state: observed wrong behavior; “still/again/not solved”; correction of concrete project content or an Agent-selected implementation choice; uncertainty about what the implementation currently does; a request to reconstruct prior decisions, reassess what remains, or determine what is obsolete; or an explicit statement that the current structure cannot support a change.</state_problem_evidence>
+      <factual_correction_rule>A correction of factual, semantic, platform, audience, requirement, or project-organization content in an existing Agent-produced artifact may pass. Do not reduce such corrections to cosmetic preference changes merely because they appear in documentation or prose.</factual_correction_rule>
+      <explanation_challenge_rule>An Agent explanation of current behavior does not make that behavior acceptable or verified. Retain when the user challenges the explained current state because it blocks an expressed functional goal, contradicts project criteria, or requires verification.</explanation_challenge_rule>
+      <history_rule>Retain state/history reassessment only when the user needs to determine the current handling of existing artifacts or decisions—for example, what is obsolete, what remains implemented, or which prior decision governs the current state. General planning or asking what to build next remains ordinary continuation.</history_rule>
+      <provenance_check>Before treating a change as a correction, identify the provenance of the challenged state. If the Agent merely implemented the user's immediately preceding value, content, or chosen plan and the target now replaces it without reporting a failure or consequence, classify it as a user-authored preference or scope revision and output DO_NOT_RETAIN. Do not apply this exclusion to factual inaccuracies, persistent functional consequences, regressions, Agent-selected semantic or architectural choices, or requests to reconstruct project history.</provenance_check>
+      <ordinary_continuation>Exclude ordinary new features or visual designs, planned next steps, routine testing without a stated uncertainty, cosmetic or copy edits without mismatch evidence, material/file supply, command/path guidance, implementation of an already chosen plan, regeneration after changed content, tool invocation, simple tool/navigation correction, usage instructions, output-format preferences, acknowledgements, and successful continuation. These remain excluded even when an existing project is visible in context.</ordinary_continuation>
+      <same_module_rule>A previous repair or implementation in the same module does not convert a later new interaction specification into a state problem. The target must contrast current behavior or structure with an acceptable state, question what was actually implemented, or expose a consequence or limitation.</same_module_rule>
+      <speech_act_rule>Classify what the target does, not what the preceding Agent happened to claim. Supplying the intended asset, restating “I want X”, replacing a user-authored preference, or requesting regeneration after inputs changed does not assert that the implementation failed. Do not convert these speech acts into corrections without mismatch evidence.</speech_act_rule>
+      <new_change_rule>NEW_CHANGE_EXPOSES_EXISTING_LIMITATION applies only when the user or trace identifies a current inability, disconnection, incompatibility, or constraint. “I want/add/build/change X” alone is an ordinary new task.</new_change_rule>
+      <restatement_rule>Restating a desired behavior after a completion claim is not enough unless the user indicates that current behavior remains wrong, uncertain, or unresolved.</restatement_rule>
+      <repeated_repair_rule>If the same repair request appears after one Agent repair/completion claim, retain as POSSIBLE when unresolved failure is plausible. If it repeats across multiple repair claims, retain as STRONG. Do not apply this rule to service/OAuth/rate-limit retries.</repeated_repair_rule>
+      <p0_scope>A short correction of an Agent-selected existing state may pass even if simple direct delegation could solve it. Downstream verification stages decide whether direct delegation was sufficient and whether full Re-entry occurred.</p0_scope>
+      <rule>If no state problem is stated or plausibly questioned, output DO_NOT_RETAIN.</rule>
+    </gate>
+
+    <gate id="G3" name="Evidence strength">
+      <strong>Use RETAIN_STRONG when the related state and problem are concrete: explicit observed mismatch/failure, factual correction tied to an identifiable existing artifact, direct contradiction of a completion claim, repeated unresolved repair across multiple claims, or explicit current-architecture conflict.</strong>
+      <possible>Use RETAIN_POSSIBLE when the target concretely points to an existing state but preceding state evidence is truncated, when a single repeated repair only implies failure, or when the current-state relation, history, or limitation is plausible but incomplete.</possible>
+    </gate>
+  </ordered_gates>
+
+  <decision_checks>
+    <check>Existing project plus ordinary request = DO_NOT_RETAIN.</check>
+    <check>Successful implementation of the user's prior choice plus a changed choice = DO_NOT_RETAIN unless a failure or consequence is reported.</check>
+    <check>Existing documentation or generated content plus a factual/semantic correction can be a project-state problem; project state is not limited to executable code.</check>
+    <check>Previous work in the same module plus a new interaction idea = DO_NOT_RETAIN unless the target identifies a current mismatch, uncertainty, consequence, or limitation.</check>
+    <check>Service/tool environment failure plus retry = DO_NOT_RETAIN.</check>
+    <check>Concrete existing-state problem with incomplete context = RETAIN_POSSIBLE, not automatic exclusion.</check>
+    <check>An Agent completion claim plus a new request is not automatically a contradicted claim.</check>
+    <check>Do not use post-target events or invent user intent.</check>
+  </decision_checks>
+
+  <output_rules>
+    <rule>Use only target_user_event_id values supplied in the input and return every supplied target exactly once.</rule>
+    <rule>If no target passes both gates, return all targets as DO_NOT_RETAIN; do not manufacture candidates.</rule>
+    <rule>For DO_NOT_RETAIN, signal_types must be []. For retained cases, choose one or more allowed signal types.</rule>
+    <rule>Rationale must identify the decisive state evidence and state-problem evidence, or the failed gate, in one sentence. Do not claim full Re-entry is confirmed.</rule>
+  </output_rules>
+
+  <signal_types>FAILURE_OR_MISMATCH, REPEATED_UNRESOLVED, REGRESSION_OR_SIDE_EFFECT, CONFLICTED_CLAIM, STATE_OR_HISTORY_RECONSTRUCTION, EVIDENCE_OR_VERIFICATION, BOUNDARY_OR_SCOPE_CONTROL, NEW_CHANGE_EXPOSES_EXISTING_LIMITATION, OTHER</signal_types>
+  {{FEW_SHOT_BANK}}
+</task_specification>

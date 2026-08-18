@@ -1,0 +1,17 @@
+<v25_precedence_rules version="p0-v2.5" precedence="override-v2.3-when-conflicting">
+  <purpose>Preserve high recall while excluding only well-supported ordinary handoffs.</purpose>
+
+  <stable_handoff_exclusions>
+    <rule>If the target directly answers the preceding Agent's request for a choice, factual parameter, credential, project identity, file, URL, usage estimate, approval, or other input, output DO_NOT_RETAIN unless the same target also reports a concrete problem in existing Agent-instantiated state.</rule>
+    <rule>A user-owned external project, template, bot, file, or prior version does not become Agent-instantiated merely because the user selects it as future input. Selecting or supplying such an artifact is ordinary continuation.</rule>
+    <rule>If the user explicitly says the current version is correct or acceptable and then asks to document, remember, reuse, export, or apply an already-approved candidate, treat this as successful continuation rather than state reconstruction.</rule>
+  </stable_handoff_exclusions>
+
+  <recall_safeguards>
+    <rule>“The current/delivered version differs from the original/reference” is explicit mismatch evidence, not a preference revision, when the Agent transformed or reproduced that artifact.</rule>
+    <rule>If the preceding trace shows the Agent actively testing, repairing, packaging, or validating the current modified application, a user's contemporaneous report of a crash, unexpected exit, or runtime failure is related state evidence even when that exact symptom was not mentioned by the Agent.</rule>
+    <rule>A concrete target-internal correction of an observable current artifact may remain RETAIN_POSSIBLE when preceding state context is absent. Do not require the target to use the words failure, wrong, or bug.</rule>
+  </recall_safeguards>
+
+  <final_check>Exclude only when one of the stable handoff rules clearly applies or when the v2.3 ordered gates fail. Do not infer successful continuation merely because the target is concise.</final_check>
+</v25_precedence_rules>

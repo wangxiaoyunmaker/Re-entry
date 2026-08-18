@@ -1,0 +1,73 @@
+<few_shot_bank adjudicated="true" status="CURRENT_THEORY_V21_DEVELOPMENT" variant="GATE_V21_BOUNDARY_7">
+  <example id="P0AUD-0001" label="RETAIN_POSSIBLE">
+    <context_events />
+    <target_user_event id="E001"><![CDATA[查看与路演 demo 有关的内容：我看你在回退时显示的是“继续讲述”；开始讲述按钮夹在进度提示和上一句/下一句中间，有点断裂；我测试了几个，风格都是水墨淡彩。]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E001","decision":"RETAIN_POSSIBLE","signal_types":["FAILURE_OR_MISMATCH"],"rationale":"The target reports tested current behaviors and concrete UI mismatches, but preceding Agent-state evidence is absent."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0059" label="RETAIN_STRONG">
+    <context_events><event id="E098" actor="AGENT"><![CDATA[已完成本轮调整。]]></event><event id="E101" actor="AGENT"><![CDATA[回归截图发现主标题居中后遮挡护照；我会把居中限定在左侧内容列。]]></event></context_events>
+    <target_user_event id="E102"><![CDATA[hero 的主标题和副标题不用居中]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E102","decision":"RETAIN_STRONG","signal_types":["FAILURE_OR_MISMATCH"],"rationale":"The user directly corrects a concrete centered-layout choice in the current implementation."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0114" label="RETAIN_POSSIBLE">
+    <context_events><event id="E013" actor="USER"><![CDATA[Fix the errors in the app]]></event><event id="E014" actor="AGENT"><![CDATA[Fixed syntax errors. Edited App.tsx. Built.]]></event></context_events>
+    <target_user_event id="E015"><![CDATA[Fix the errors in the app]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E015","decision":"RETAIN_POSSIBLE","signal_types":["REPEATED_UNRESOLVED"],"rationale":"A single repeat after a repair claim plausibly indicates unresolved errors but gives no explicit failure observation."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0115" label="RETAIN_STRONG">
+    <context_events><event id="E013" actor="USER"><![CDATA[Fix the errors in the app]]></event><event id="E014" actor="AGENT"><![CDATA[Fixed syntax errors. Built.]]></event><event id="E015" actor="USER"><![CDATA[Fix the errors in the app]]></event><event id="E016" actor="AGENT"><![CDATA[Fixed getZoomLabel corruption and duplicate JSX. Built.]]></event></context_events>
+    <target_user_event id="E017"><![CDATA[Fix the errors in the app]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E017","decision":"RETAIN_STRONG","signal_types":["REPEATED_UNRESOLVED","CONFLICTED_CLAIM"],"rationale":"The same repair request persists across multiple Agent repair claims."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0088" label="RETAIN_POSSIBLE">
+    <context_events><event id="E166" actor="AGENT"><![CDATA[I connected Ardot MCP and built the current cultural-product board in Ardot.]]></event></context_events>
+    <target_user_event id="E167"><![CDATA[当前这个 skill 需要有能力在 Ardot 上完成这些文创的设计，应该怎么修改]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E167","decision":"RETAIN_POSSIBLE","signal_types":["NEW_CHANGE_EXPOSES_EXISTING_LIMITATION"],"rationale":"The target plausibly exposes that the current Skill does not encode a capability demonstrated only in the present Agent workflow."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0042" label="RETAIN_POSSIBLE">
+    <context_events><event id="E041" actor="AGENT"><![CDATA[Compared the implemented six stages with the target nine-stage plan and listed missing Unity integration, event rules, mappings, and end-to-end testing.]]></event></context_events>
+    <target_user_event id="E042"><![CDATA[直接告诉我还需要做啥]]></target_user_event>
+    <schema_mapping><![CDATA[{"target_event_id":"E042","decision":"RETAIN_POSSIBLE","signal_types":["STATE_OR_HISTORY_RECONSTRUCTION","EVIDENCE_OR_VERIFICATION"],"rationale":"The short request asks for an actionable reassessment of remaining work immediately after an explicit current-versus-target gap analysis."}]]></schema_mapping>
+  </example>
+
+  <example id="P0AUD-0053" label="DO_NOT_RETAIN">
+    <context_events><event id="E049" actor="AGENT"><![CDATA[已完成个人作品集网站第一版，包含 Tours cards, routes, animations, and responsive layout.]]></event></context_events>
+    <target_user_event id="E050"><![CDATA[现在逐个修改细节：我希望登机牌最开始略微杂乱堆叠，向下滚动时变成有序排列，悬浮时增加动效。]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="An existing project is present, but the target introduces a new design behavior without identifying a current-state problem." />
+  </example>
+
+  <example id="P0AUD-0048" label="DO_NOT_RETAIN">
+    <context_events><event id="E093" actor="AGENT"><![CDATA[Reported that voice input, Seed-TTS output, and automated tests were completed.]]></event></context_events>
+    <target_user_event id="E094"><![CDATA[我希望是直接语音传入，然后豆包也有语音传出的声音，Agent 的任务提示也可以有声音。]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="The target restates desired behavior but does not report that the current voice implementation failed or differs from observation." />
+  </example>
+
+  <example id="P0AUD-0058" label="DO_NOT_RETAIN">
+    <context_events><event id="E089" actor="AGENT"><![CDATA[Replacing the cloud layer and validating the supplied assets.]]></event></context_events>
+    <target_user_event id="E090"><![CDATA[云是这个图片 [image attachment]]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="This supplies the intended image asset; it does not state a problem in the existing rendering." />
+  </example>
+
+  <example id="P0AUD-0085" label="DO_NOT_RETAIN">
+    <context_events><event id="E114" actor="AGENT"><![CDATA[Updated the source calculation and regenerated the current cultural-product outputs.]]></event></context_events>
+    <target_user_event id="E115"><![CDATA[根据修改后的内容，重新制作这几个文创]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="Regeneration after the source content changed is ordinary follow-through, not evidence that the prior completion claim was false." />
+  </example>
+
+  <example id="P0AUD-0011" label="DO_NOT_RETAIN">
+    <context_events><event id="E021" actor="AGENT"><![CDATA[Explained the current folder structure, shared samples, npm start, and relative paths.]]></event></context_events>
+    <target_user_event id="E022"><![CDATA[我是不是新开终端，进入当天文件夹 npm start，再在新终端跑 bench？路径怎么写，给我指令。]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="This asks for normal command and path guidance, not a problem in Agent-instantiated project state." />
+  </example>
+
+  <example id="P0AUD-0128" label="DO_NOT_RETAIN">
+    <context_events><event id="E018" actor="AGENT"><![CDATA[Figma MCP authorization timed out; prepare the browser and say retry to initiate OAuth again.]]></event></context_events>
+    <target_user_event id="E019"><![CDATA[再试]]></target_user_event>
+    <schema_mapping candidates="[]" rationale="A retry after an OAuth/MCP service failure is not a project-state problem." />
+  </example>
+</few_shot_bank>

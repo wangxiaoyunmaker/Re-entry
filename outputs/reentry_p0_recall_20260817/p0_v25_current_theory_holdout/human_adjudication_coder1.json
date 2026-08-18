@@ -1,0 +1,26 @@
+{
+  "status": "CURRENT_THEORY_SINGLE_CODER_PROVISIONAL",
+  "created_before_v25_prompt": true,
+  "decisions": [
+    {"holdout_id":"V25H-001","decision":"DO_NOT_RETAIN","rationale":"The target asks which application's notification permission to enable; it is ordinary usage guidance, not a problem in Agent-instantiated project state."},
+    {"holdout_id":"V25H-002","decision":"DO_NOT_RETAIN","rationale":"This is a new documentation-organization task following a completed repository initialization."},
+    {"holdout_id":"V25H-003","decision":"RETAIN_STRONG","rationale":"The user identifies missing coverage, translation errors, and an incorrect workflow in the Agent-maintained manual and supplies the authoritative process."},
+    {"holdout_id":"V25H-004","decision":"RETAIN_POSSIBLE","rationale":"The user expresses dissatisfaction with the just-delivered app, but the mismatch is evaluative and underspecified rather than a concrete functional failure."},
+    {"holdout_id":"V25H-005","decision":"DO_NOT_RETAIN","rationale":"The target asks a design question and supplies a Skill during planning, before the Agent has instantiated the relevant feature."},
+    {"holdout_id":"V25H-006","decision":"RETAIN_STRONG","rationale":"After a completed app build, the user reports several concrete failures and regressions alongside additional feature requests."},
+    {"holdout_id":"V25H-007","decision":"RETAIN_STRONG","rationale":"The Agent-delivered standalone HTML differs from the user's original website despite the preservation expectation."},
+    {"holdout_id":"V25H-008","decision":"DO_NOT_RETAIN","rationale":"The user sets a precautionary server boundary and asks to continue testing without identifying a current server-state problem."},
+    {"holdout_id":"V25H-009","decision":"RETAIN_STRONG","rationale":"Following a broad completion claim, the user checks whether required admin functionality exists and corrects several settings, outputs, and deployment relations."},
+    {"holdout_id":"V25H-010","decision":"DO_NOT_RETAIN","rationale":"The DeepSeek service issue is unrelated to the Agent's preceding CSS-only modification and does not establish a related instantiated state."},
+    {"holdout_id":"V25H-011","decision":"RETAIN_STRONG","rationale":"The user questions whether claimed patches and test results are reflected in the actually installed application."},
+    {"holdout_id":"V25H-012","decision":"DO_NOT_RETAIN","rationale":"The user supplies a new real-API testing constraint rather than reporting a problem in the completed commenting and test work."},
+    {"holdout_id":"V25H-013","decision":"DO_NOT_RETAIN","rationale":"This is a normal post-delivery visual and language refinement request; it does not require recovering project state or re-establishing governance."},
+    {"holdout_id":"V25H-014","decision":"DO_NOT_RETAIN","rationale":"There is no preceding Agent-instantiated state in the captured trace, so this isolated layout request is not a Re-entry occasion."},
+    {"holdout_id":"V25H-015","decision":"RETAIN_STRONG","rationale":"The user corrects an established domain translation and a concrete table description in the Agent-maintained manual."},
+    {"holdout_id":"V25H-016","decision":"DO_NOT_RETAIN","rationale":"The user accepts two previewed icon candidates and authorizes their planned replacement; no current-state problem is asserted."},
+    {"holdout_id":"V25H-017","decision":"DO_NOT_RETAIN","rationale":"The target adds a new light-mode visual specification after the dark-mode button was implemented successfully."},
+    {"holdout_id":"V25H-018","decision":"RETAIN_STRONG","rationale":"The user corrects the Agent's analysis scope: the result counted only visible titles rather than the requested conversation content."},
+    {"holdout_id":"V25H-019","decision":"RETAIN_STRONG","rationale":"While the Agent is testing the modified app, the user reports an observed unexpected-exit failure."},
+    {"holdout_id":"V25H-020","decision":"DO_NOT_RETAIN","rationale":"The user supplies a URL in response to the Agent's request; it is information input, even though the URL type may still be wrong."}
+  ]
+}
