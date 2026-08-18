@@ -1,0 +1,36 @@
+{
+  "run_id": "p0-v2.5-frozen-full-20260818",
+  "status": "COMPLETE",
+  "prompt_frozen": true,
+  "provider": "mixed",
+  "provider_history": {
+    "photomind": 1234,
+    "deepseek": 877
+  },
+  "env_path": "/Users/wy/Desktop/HCI/.env",
+  "input_chunks": "/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260817/p0_scan_chunks.jsonl",
+  "input_chunk_count": 2111,
+  "prompt_components": {
+    "system": "/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_1_candidate/system.txt",
+    "system_sha256": "8d28925147c348cdd94e0952b9e86b085e1b7ae84c16fb53f4ce10ce67e70cd6",
+    "developer_base": "/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_3_candidate/developer_gate_v23.xml",
+    "developer_base_sha256": "9966ce2b18c052d3884868b42c7c0aec399c2b520c2906aa2f404fb9a8ca494f",
+    "few_shot": "/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_1_candidate/few_shot_gate_v21.xml",
+    "few_shot_sha256": "f5fe91e197744d8293448934530956c61408dbe79a10b1053101104aa4b67207",
+    "v25_addendum": "/Users/wy/Desktop/HCI/prompts/reentry_p0/v2_5_candidate/developer_gate_v25_addendum.xml",
+    "v25_addendum_sha256": "3ed8b9d73e9f70dd5fe7e184473185c2ce0c051eed820c7df3406bcdde5a26cf"
+  },
+  "outputs": {
+    "results": "/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260818_v25_full/p0_v25_full_scan_results.jsonl",
+    "candidates": "/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260818_v25_full/p0_v25_candidates.jsonl",
+    "p1_inputs": "/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260818_v25_full/p0_v25_candidates_for_p1.jsonl",
+    "report": "/Users/wy/Desktop/HCI/outputs/reentry_p0_recall_20260818_v25_full/p0_v25_full_scan_report.md"
+  },
+  "scope": "All normalized USER events in the complete 41-participant corpus; P0 candidate retrieval only.",
+  "downstream_boundary": "P0 retention is not a final Re-entry label; candidates require P1 Occasion and direct-delegation sufficiency review.",
+  "result_sha256": "a8469d2880f773d274c732a3efddce8583c8bd4ffeeb34b8d7c14bc033ce30b1",
+  "candidate_sha256": "75650055cb338b891e488edf5002edc979f6c59e849ebd43de8eb5eeba44c6a6",
+  "p1_input_sha256": "99d18574c7bc67bd2334f80c700a1aaceeb7bb93a60a6682e2038c3e979690f2",
+  "candidate_count": 2904,
+  "result_chunk_count": 2111
+}
