@@ -57,6 +57,7 @@ PYTHONPATH=src python3 -m retrace_selector.cli calibrate \
 - [Specification](docs/SPECIFICATION.md)
 - [Implementation issues](docs/IMPLEMENTATION_ISSUES.md)
 - [Real prefix and calibration specification](docs/REAL_PREFIX_CALIBRATION_SPEC.md)
+- [Skill and Selector subagent technical design](../0820-ReTrace-Skill与Selector-子Agent技术方案-v0.1.md)
 
 ## Package boundary
 
