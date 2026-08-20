@@ -7,3 +7,4 @@ build/
 *.egg-info/
 replay_outputs/*.json
 replay_outputs/*.jsonl
+artifacts/

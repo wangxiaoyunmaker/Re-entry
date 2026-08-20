@@ -6,8 +6,10 @@ from pathlib import Path
 import sys
 
 from .audit import append_jsonl, write_json
+from .calibration import build_calibration_review_templates, calibrate_policy
 from .config import load_json, load_policy, load_templates
 from .models import DecisionState, ValidationError
+from .real_prefix import build_prefix_manifest, write_jsonl
 from .replay import replay_scenarios
 from .selector import SelectionEngine
 
@@ -28,6 +30,25 @@ def _parser() -> argparse.ArgumentParser:
     replay.add_argument("--templates", required=True)
     replay.add_argument("--states", required=True)
     replay.add_argument("--output")
+
+    prefixes = subparsers.add_parser(
+        "build-prefixes", help="build leakage-guarded real episode prefix manifests"
+    )
+    prefixes.add_argument("--core-inventory", required=True)
+    prefixes.add_argument("--edge-inventory")
+    prefixes.add_argument("--excluded-inventory")
+    prefixes.add_argument("--annotations")
+    prefixes.add_argument("--output-dir", required=True)
+
+    calibrate = subparsers.add_parser(
+        "calibrate", help="fit policy parameters on approved prefix reviews"
+    )
+    calibrate.add_argument("--policy", required=True)
+    calibrate.add_argument("--templates", required=True)
+    calibrate.add_argument("--reviews", required=True)
+    calibrate.add_argument("--output", required=True)
+    calibrate.add_argument("--minimum-cases", type=int, default=10)
+    calibrate.add_argument("--minimum-groups", type=int, default=3)
     return parser
 
 
@@ -44,8 +65,41 @@ def _emit(data: dict, output: str | None) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.command == "build-prefixes":
+            inventories = [(args.core_inventory, "core")]
+            if args.edge_inventory:
+                inventories.append((args.edge_inventory, "edge"))
+            if args.excluded_inventory:
+                inventories.append((args.excluded_inventory, "excluded"))
+            records, report = build_prefix_manifest(inventories)
+            output_dir = Path(args.output_dir)
+            write_jsonl(output_dir / "prefix_manifest.jsonl", records)
+            _emit(report, str(output_dir / "prefix_build_report.json"))
+            if args.annotations:
+                reviews, review_report = build_calibration_review_templates(
+                    records, args.annotations
+                )
+                write_jsonl(output_dir / "calibration_review_template.jsonl", reviews)
+                _emit(
+                    review_report,
+                    str(output_dir / "calibration_template_report.json"),
+                )
+            _emit(report, None)
+            return 0 if report["leakage_failures"] == 0 else 2
+
         policy = load_policy(args.policy)
         templates = load_templates(args.templates)
+        if args.command == "calibrate":
+            calibration = calibrate_policy(
+                args.reviews,
+                policy,
+                templates,
+                minimum_cases=args.minimum_cases,
+                minimum_groups=args.minimum_groups,
+            )
+            _emit(calibration, args.output)
+            return 0
+
         engine = SelectionEngine(policy, templates)
         if args.command == "select":
             state = DecisionState.from_dict(load_json(args.state))

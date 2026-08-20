@@ -77,5 +77,29 @@
 ## 2026-08-20 — I-013：参数与候选级证据关联尚属设计假设
 
 - **问题：**权重、能力、负担和阈值尚未经双研究者标注或真实效果数据校准；当前 Brief 携带状态中的 evidence IDs，尚未建立 claim/primitive 级支持关系。
-- **决策：**将当前 policy 统一定位为 `DESIGN_ASSUMPTION`；候选级 evidence linkage 和参数 calibration 作为进入用户评估前的 gate。
-- **状态：**Open research calibration task。
+- **决策：**将当前 policy 统一定位为 `DESIGN_ASSUMPTION`；v0.2.0 已实现 need/primitive 级 evidence linkage 和人工批准后 calibration 管线。
+- **状态：**候选级绑定 Resolved；经验参数仍等待批准样本。
+
+## 2026-08-20 — I-014：真实 transcript 并非全部是严格单行 JSONL
+
+- **问题：**SRE-0068 的消息正文包含未转义换行，逐行 `json.loads` 会把一个对象误拆成多行。
+- **决策：**使用 `JSONDecoder(strict=False).raw_decode` 顺序解析对象流；仍严格检查对象类型与 `source_context/record_index/role`，且错误信息不输出正文。
+- **状态：**Resolved with regression test。
+
+## 2026-08-20 — I-015：context-local record 编号无法唯一定位 onset
+
+- **问题：**271 个 episode 中有 6 个的数字 onset 在多个 context 重复。若任选一个匹配点，可能把未来事件纳入 prefix 或提前截断。
+- **决策：**优先使用 `context_xxxx:Rn` 边界；仅当数字 record 在整份 transcript 中唯一时自动解析。歧义案例标记 `REVIEW_REQUIRED`，不进入 calibration。
+- **状态：**265 READY，6 REVIEW_REQUIRED；等待人工补充 context-qualified onset。
+
+## 2026-08-20 — I-016：完整 episode 编码会造成结果泄漏
+
+- **问题：**v2.2 的 recovery/action/evidence/decision 编码及 source pointers 覆盖 onset 之后的用户行动，不能直接生成选择器输入。
+- **决策：**物理分离 prefix state 与 calibration target。选择器只能看到 onset 及之前的引用；完整编码标记 `selector_visible=false`。人工 state 中的 evidence ID、locator、sequence index、content hash 必须与 prefix manifest 完全一致。
+- **状态：**Resolved by schema and fail-closed validation。
+
+## 2026-08-20 — I-017：现有样本不足以诚实完成经验校准
+
+- **问题：**现有 v2.2 标注只有 20 例，其中 core 7 例；20 例均未完成只看 prefix 的人工状态复核。默认 calibration gate 要求至少 10 个批准案例和 3 个参与者组。
+- **决策：**已生成 20 例 review template，但保持 `PENDING`。当前 CLI 应返回 `approved cases; got 0`，不得输出“已校准”参数。需先扩充 core 编码并完成盲于 post-onset 标签的 prefix review。
+- **状态：**Open empirical data gate；代码管线已完成。

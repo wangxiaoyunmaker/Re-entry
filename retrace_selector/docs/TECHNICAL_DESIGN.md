@@ -3,12 +3,11 @@
 ## 1. Architecture
 
 ```text
-JSON state ─┐
-            ├→ strict loaders → candidate generator → constraint engine
-policy JSON ┘                                      ↓
-                         audit ← selector ← skyline ← scorer
-                                      ↓
-                              frozen template renderer
+episode inventory → onset resolver → prefix manifest → human prefix review ┐
+                                                                           ├→ strict state loader
+policy JSON ────────────────────────────────────────────────────────────────┘
+          → candidate generator → constraint engine → scorer → skyline
+          → selector → frozen renderer → audit
 ```
 
 状态识别、选择算法和内容渲染严格分层。算法内核使用纯函数，不调用网络、不读取原始对话、不写项目文件。
@@ -18,6 +17,9 @@ policy JSON ┘                                      ↓
 | Module | Responsibility |
 |---|---|
 | `models.py` | 枚举、状态、候选、分数和结果类型 |
+| `real_prefix.py` | 解析真实 transcript、冻结 onset prefix、生成无正文证据清单和泄漏报告 |
+| `evidence.py` | 将证据按 need/primitive 绑定到候选并计算候选级证据完整度 |
+| `calibration.py` | 隔离完整 episode 标签、校验人工批准状态、搜索参数并按参与者分组交叉验证 |
 | `config.py` | 严格加载 policy/templates，计算 SHA-256 |
 | `candidates.py` | 生成 canonical 单原语候选和 B0 |
 | `constraints.py` | 逐候选硬约束与全局冲突检查 |
@@ -27,7 +29,7 @@ policy JSON ┘                                      ↓
 | `rendering.py` | 冻结模板渲染 |
 | `audit.py` | canonical JSON、JSONL 和幂等审计 ID |
 | `replay.py` | 批量运行与汇总指标 |
-| `cli.py` | select/replay 命令 |
+| `cli.py` | select/replay/build-prefixes/calibrate 命令 |
 
 ## 3. Core API
 
@@ -55,7 +57,7 @@ compute_skyline(scored, epsilon)
 
 `NO_INTERVENTION` 是普通候选和 gain 基线；高风险时可以被约束删除。即使被删除，其基线分数仍用于诊断 gain。`SAFE_HOLD` 不参与候选比较。
 
-`DESIGN_ASSUMPTION` 只标识设计依据，不能单独支撑 partial/sufficient 的项目证据完整度。`CAUSAL_EXPLANATION-L2/L3` 还必须有至少一条 `OBSERVED` 证据。
+`DESIGN_ASSUMPTION` 只标识设计依据，不能单独支撑 partial/sufficient 的项目证据完整度。`CAUSAL_EXPLANATION-L2/L3` 还必须有至少一条与该候选绑定的 `OBSERVED` 证据。候选级绑定优先于宽泛的 need 绑定；一个候选不能借用只支持其他 need/primitive 的证据。
 
 ### 4.3 Scoring
 
@@ -67,7 +69,7 @@ score_k = intrinsic_capability_k
           × normalized_need_k
 ```
 
-`minimum_evidence` 是硬约束门槛；`E` 只表示当前 evidence completeness，不会因候选无最低证据要求而自动置 1。`W=1-burden-cooldown_penalty`。
+`minimum_evidence` 是硬约束门槛；`E` 根据该候选所绑定证据计算，不会因候选无最低证据要求而自动置 1。`W=1-burden-cooldown_penalty`。
 
 ### 4.4 Skyline and ranking
 
@@ -86,4 +88,4 @@ score_k = intrinsic_capability_k
 
 ## 6. Extension boundary
 
-双原语 Brief、自动状态识别、学习策略和生成式 renderer 必须作为独立版本进入，不能静默改变 MVP policy。
+双原语 Brief、自动状态识别、在线学习策略和生成式 renderer 必须作为独立版本进入，不能静默改变当前 policy。离线 calibration 只能输出版本化建议参数，不能自动覆盖生产配置。
