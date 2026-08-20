@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
+import hashlib
+import json
 import math
 from typing import Any, Mapping
 
@@ -241,8 +243,18 @@ class DecisionState:
         evidence_ids = [item.evidence_id for item in evidence]
         if len(set(evidence_ids)) != len(evidence_ids):
             raise ValidationError("evidence IDs must be unique")
-        if evidence_completeness is not EvidenceCompleteness.NONE and not evidence:
-            raise ValidationError("non-empty evidence is required unless completeness is none")
+        empirical_evidence = tuple(
+            item
+            for item in evidence
+            if item.source is not EvidenceSource.DESIGN_ASSUMPTION
+        )
+        if (
+            evidence_completeness is not EvidenceCompleteness.NONE
+            and not empirical_evidence
+        ):
+            raise ValidationError(
+                "partial or sufficient completeness requires OBSERVED or INFERRED evidence"
+            )
         active_verification = data["active_verification"]
         if not isinstance(active_verification, bool):
             raise ValidationError("active_verification must be boolean")
@@ -438,7 +450,7 @@ class RenderedBrief:
         }
 
 
-@dataclass
+@dataclass(frozen=True)
 class SelectionResult:
     audit_id: str
     outcome: Outcome
@@ -452,8 +464,20 @@ class SelectionResult:
     warnings: tuple[str, ...]
     rendered_briefs: tuple[RenderedBrief, ...]
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    decision_digest: str = field(init=False)
 
-    def to_dict(self) -> dict[str, Any]:
+    def __post_init__(self) -> None:
+        payload = self._payload_dict()
+        canonical = json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+        object.__setattr__(
+            self,
+            "decision_digest",
+            hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        )
+
+    def _payload_dict(self) -> dict[str, Any]:
         return {
             "audit_id": self.audit_id,
             "outcome": self.outcome.value,
@@ -470,3 +494,20 @@ class SelectionResult:
             "rendered_briefs": [item.to_dict() for item in self.rendered_briefs],
             "metadata": dict(self.metadata),
         }
+
+    def to_dict(self) -> dict[str, Any]:
+        self.validate_integrity()
+        result = self._payload_dict()
+        result["decision_digest"] = self.decision_digest
+        return result
+
+    def validate_integrity(self) -> None:
+        canonical = json.dumps(
+            self._payload_dict(),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        actual = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        if actual != self.decision_digest:
+            raise ValidationError("selection result changed after decision sealing")

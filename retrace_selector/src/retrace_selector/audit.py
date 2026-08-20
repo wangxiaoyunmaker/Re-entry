@@ -8,6 +8,7 @@ from .models import SelectionResult, ValidationError
 
 
 def write_json(path: str | Path, result: SelectionResult) -> None:
+    result.validate_integrity()
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
@@ -20,6 +21,8 @@ def append_jsonl(path: str | Path, result: SelectionResult) -> bool:
     """Append a deterministic audit record; return False when already present."""
 
     target = Path(path)
+    result.validate_integrity()
+    new_payload = result.to_dict()
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         with target.open("r", encoding="utf-8") as handle:
@@ -32,8 +35,16 @@ def append_jsonl(path: str | Path, result: SelectionResult) -> bool:
                     raise ValidationError(
                         f"invalid existing audit JSONL at line {line_number}"
                     ) from exc
+                if not isinstance(item, dict):
+                    raise ValidationError(
+                        f"invalid existing audit JSONL object at line {line_number}"
+                    )
                 if item.get("audit_id") == result.audit_id:
-                    return False
+                    if canonical_json(item) == canonical_json(new_payload):
+                        return False
+                    raise ValidationError(
+                        f"audit conflict for audit_id {result.audit_id}"
+                    )
     with target.open("a", encoding="utf-8") as handle:
-        handle.write(canonical_json(result.to_dict()) + "\n")
+        handle.write(canonical_json(new_payload) + "\n")
     return True

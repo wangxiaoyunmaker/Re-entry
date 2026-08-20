@@ -83,6 +83,8 @@ Occasion 的最终类别仍应由全部 episode 的开放编码产生，本系�
 
 三个来源必须分别记录，不能混写成同等强度的经验事实。
 
+`DESIGN_ASSUMPTION` 不能单独支撑 partial/sufficient 的项目证据完整度；高强度因果解释还必须至少有一条 `OBSERVED` 证据。
+
 ## 3. 最小状态输入
 
 ```json
@@ -135,7 +137,7 @@ Occasion 的最终类别仍应由全部 episode 的开放编码产生，本系�
 | `L2` | 明确建议用户判断、验证或选择 |
 | `L3` | 高后果情况下暂停行动并等待处置 |
 
-不展示干预统一表示为 `NO_INTERVENTION/RECORD_ONLY`。
+不展示干预表示为 `NO_INTERVENTION`。`RECORD_ONLY` 是内部审计行为，不是候选干预。
 
 ### 4.3 Decision Brief
 
@@ -144,12 +146,12 @@ Occasion 的最终类别仍应由全部 episode 的开放编码产生，本系�
 ```text
 PROVENANCE-L1
 RULE_ALIGNMENT-L2
-CAUSAL_EXPLANATION-L2 + VERIFICATION-L1
-PROVENANCE-L1 + DISPOSITION_COORDINATION-L2
+CAUSAL_EXPLANATION-L2
+DISPOSITION_COORDINATION-L2
 NO_INTERVENTION
 ```
 
-MVP 以单原语 Brief 为主。只有两个中高等级治理需求同时存在、两个组件分别覆盖不同需求且能够整合展示时，才生成双原语 Brief。
+MVP 只生成单原语 Brief。双原语需要额外冻结组合白名单、协同效用和整合负担，留待后续 policy 版本。
 
 ## 5. 多准则属性
 
@@ -215,7 +217,7 @@ $$
 
 | 条件 | 约束 |
 |---|---|
-| 状态置信度低 | 只允许 L1、请求证据或 `SAFE_HOLD` |
+| 状态置信度低 | 普通风险只允许 L1；与高风险冲突时返回 `REQUEST_CLARIFICATION` |
 | 证据不足 | 禁止高强度因果解释和确定性完成声明 |
 | 授权风险高 | 必须包含 `DISPOSITION_COORDINATION-L2/L3` |
 | 后果高且不可逆 | 不允许普通不干预或仅 L1 |
@@ -230,7 +232,7 @@ $$
 F(s)=\{B\in G(s)\mid Constraints(B,s)=true\}
 $$
 
-如果没有安全可行候选，返回 `SAFE_HOLD/REQUEST_CLARIFICATION`，不能放宽硬约束制造答案。
+如果硬约束后没有安全可行候选，返回 `SAFE_HOLD`，不能放宽硬约束制造答案。`REQUEST_CLARIFICATION` 仅用于全局预检阶段的低置信度—高风险冲突。
 
 ## 7. Skyline 与最终选择
 
@@ -264,7 +266,7 @@ $$
 Gain_\theta(B\mid s)=U_\theta(B\mid s)-U_\theta(B_0\mid s)
 $$
 
-只有最佳候选的增益超过 `τ_gain` 才展示干预：
+当 `B_0` 通过硬约束时，只有最佳候选的增益超过 `τ_gain` 才展示干预：
 
 $$
 B_\theta^*(s)=
@@ -275,6 +277,8 @@ B_0, & \text{otherwise}
 $$
 
 该结果是 **policy-relative conditional optimum**。
+
+当 `B_0` 因安全或授权硬约束不可行时，系统在剩余安全候选中排序并标记 `forced_governance=true`，不将这一路径表述为“已证明优于不干预”。若没有安全候选，返回 `SAFE_HOLD`。
 
 ### 7.3 不稳定时不假装唯一最优
 
@@ -306,7 +310,7 @@ $$
 7. 计算 O/S/D/E/W
 8. 计算 Skyline 非支配集
 9. 按冻结策略排序，并与 NO_INTERVENTION 比较
-10. 输出干预、并列选择、NO_INTERVENTION 或 SAFE_HOLD
+10. 输出干预、并列选择、NO_INTERVENTION、REQUEST_CLARIFICATION 或 SAFE_HOLD
 11. 记录用户后续判断、验证、处置和项目结果
 ```
 
@@ -330,7 +334,7 @@ $$
 1. 对全部 Occasion window 完成开放编码；
 2. 检查 `O/S/D` 是否覆盖用户真实的治理重构工作；
 3. 由至少两名研究者独立标注原语能力、兼容性和负担；
-4. 冻结硬约束、权重、强度和候选组合规则；
+4. 冻结硬约束、权重、强度和候选生成规则；
 5. 所有参数使用有限序数等级，不伪装成精确心理测量。
 
 历史日志只能形成设计先验，不能估计干预因果效果。

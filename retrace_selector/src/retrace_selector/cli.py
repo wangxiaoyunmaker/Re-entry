@@ -12,25 +12,20 @@ from .replay import replay_scenarios
 from .selector import SelectionEngine
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_POLICY = PROJECT_ROOT / "config" / "policy.v0.2.json"
-DEFAULT_TEMPLATES = PROJECT_ROOT / "config" / "templates.v0.2.json"
-
-
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="retrace-selector")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     select = subparsers.add_parser("select", help="select an intervention")
-    select.add_argument("--policy", default=str(DEFAULT_POLICY))
-    select.add_argument("--templates", default=str(DEFAULT_TEMPLATES))
+    select.add_argument("--policy", required=True)
+    select.add_argument("--templates", required=True)
     select.add_argument("--state", required=True)
     select.add_argument("--output")
     select.add_argument("--audit-jsonl")
 
     replay = subparsers.add_parser("replay", help="run canonical scenarios")
-    replay.add_argument("--policy", default=str(DEFAULT_POLICY))
-    replay.add_argument("--templates", default=str(DEFAULT_TEMPLATES))
+    replay.add_argument("--policy", required=True)
+    replay.add_argument("--templates", required=True)
     replay.add_argument("--states", required=True)
     replay.add_argument("--output")
     return parser

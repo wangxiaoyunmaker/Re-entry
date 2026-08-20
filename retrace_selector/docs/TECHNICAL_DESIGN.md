@@ -55,6 +55,8 @@ compute_skyline(scored, epsilon)
 
 `NO_INTERVENTION` 是普通候选和 gain 基线；高风险时可以被约束删除。即使被删除，其基线分数仍用于诊断 gain。`SAFE_HOLD` 不参与候选比较。
 
+`DESIGN_ASSUMPTION` 只标识设计依据，不能单独支撑 partial/sufficient 的项目证据完整度。`CAUSAL_EXPLANATION-L2/L3` 还必须有至少一条 `OBSERVED` 证据。
+
 ### 4.3 Scoring
 
 对 `k∈{O,S,D}`：
@@ -65,7 +67,7 @@ score_k = intrinsic_capability_k
           × normalized_need_k
 ```
 
-`E` 由证据门槛和当前 evidence completeness 计算；`W=1-burden-cooldown_penalty`。
+`minimum_evidence` 是硬约束门槛；`E` 只表示当前 evidence completeness，不会因候选无最低证据要求而自动置 1。`W=1-burden-cooldown_penalty`。
 
 ### 4.4 Skyline and ranking
 
@@ -75,10 +77,12 @@ score_k = intrinsic_capability_k
 
 - 输入、policy、templates 使用 canonical JSON；
 - policy/templates 的 SHA-256 写入结果；
+- engine version 由代码拥有，policy 版本不兼容时 fail closed；
 - 候选和输出按 canonical ID 排序；
 - 相同输入和配置产生相同 `audit_id` 与决策内容；
+- 决策内容另有 `decision_digest`，写入前校验封存后变化；
 - 运行时间不进入确定性决策对象；
-- 审计 JSONL 检测重复 `audit_id`。
+- 审计 JSONL 检测重复 `audit_id`，同 ID 异内容必须报冲突。
 
 ## 6. Extension boundary
 

@@ -54,13 +54,14 @@ global confidence/risk conflict
 - `REENTRY_OCCASION_OBSERVED`: L1/L2/L3 + B0;
 - `GOVERNANCE_RECOVERING`: L1 + B0;
 - candidate must have a non-zero matching primary governance need;
-- high authorization risk forces `DISPOSITION_COORDINATION-L2/L3` even if D was incorrectly coded zero, with an audit warning;
+- high authorization risk generates `DISPOSITION_COORDINATION-L2/L3` even if D was coded zero when the process state permits those levels; otherwise the hard constraints yield `SAFE_HOLD`;
+- `DESIGN_ASSUMPTION` does not substantiate state evidence completeness; `CAUSAL_EXPLANATION-L2/L3` requires at least one `OBSERVED` reference;
 - no multi-component Brief in MVP.
 
 ## 6. Terminal semantics
 
 - `NO_INTERVENTION` is a selectable candidate;
-- `record_only=true` is an audit behavior, not a candidate ID;
+- `audit_record_ready=true` means the result can be persisted as an audit record; it is not a candidate ID or proof that a file write occurred;
 - `REQUEST_CLARIFICATION` is a global preflight outcome;
 - `SAFE_HOLD` is the empty-feasible-set outcome;
 - neither terminal outcome participates in Skyline.
@@ -76,5 +77,6 @@ Near-tie is evaluated only between the top two intervention candidates after gai
 - every score is finite and in `[0,1]`;
 - policy weights sum to 1;
 - every result contains policy/template hashes and evidence references;
+- every result contains a sealed `decision_digest`; same-audit-ID/different-content appends fail closed;
 - forced-governance decisions record that gain gating was bypassed;
 - rendering failure cannot substitute another primitive.

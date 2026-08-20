@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Mapping
 
 from .models import (
@@ -24,6 +25,7 @@ from .models import (
     _nonnegative_int,
     _require_mapping,
 )
+from .version import ENGINE_VERSION
 
 
 def canonical_json(data: Any) -> str:
@@ -38,6 +40,10 @@ def _nonempty_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValidationError(f"{field_name} must be a non-empty string")
     return value.strip()
+
+
+def _frozen_mapping(data: Mapping[Any, Any]) -> Mapping[Any, Any]:
+    return MappingProxyType(dict(data))
 
 
 def load_json(path: str | Path) -> Any:
@@ -78,6 +84,14 @@ def load_policy(path: str | Path) -> PolicySpec:
     _check_keys(data, required=required, context="policy")
     if data["schema_version"] != "retrace-policy-v1":
         raise ValidationError(f"unsupported policy schema: {data['schema_version']}")
+    declared_engine_version = _nonempty_string(
+        data["engine_version"], "engine_version"
+    )
+    if declared_engine_version != ENGINE_VERSION:
+        raise ValidationError(
+            f"policy engine_version {declared_engine_version} is incompatible with "
+            f"engine {ENGINE_VERSION}"
+        )
 
     threshold_raw = _require_mapping(data["thresholds"], "thresholds")
     threshold_keys = {
@@ -94,8 +108,8 @@ def load_policy(path: str | Path) -> PolicySpec:
     if isinstance(epsilon, bool) or not isinstance(epsilon, (int, float)):
         raise ValidationError("dominance_epsilon must be numeric")
     epsilon = float(epsilon)
-    if not math.isfinite(epsilon) or epsilon <= 0:
-        raise ValidationError("dominance_epsilon must be finite and positive")
+    if not math.isfinite(epsilon) or not 0 < epsilon <= 1:
+        raise ValidationError("dominance_epsilon must be finite and within (0, 1]")
     thresholds = Thresholds(
         low_confidence=_finite_unit_float(
             threshold_raw["low_confidence"], "thresholds.low_confidence"
@@ -144,6 +158,11 @@ def load_policy(path: str | Path) -> PolicySpec:
     level_multipliers = _level_map(
         data["level_multipliers"], "level_multipliers", _finite_unit_float
     )
+    if not all(
+        level_multipliers[left] <= level_multipliers[right]
+        for left, right in ((Level.L1, Level.L2), (Level.L2, Level.L3))
+    ):
+        raise ValidationError("level_multipliers must be non-decreasing from L1 to L3")
     profile_raw = _require_mapping(data["primitive_profiles"], "primitive_profiles")
     _check_keys(
         profile_raw,
@@ -183,22 +202,36 @@ def load_policy(path: str | Path) -> PolicySpec:
             f"profile.{primitive.value}.minimum_evidence",
             _evidence_value,
         )
+        if not all(
+            burden[left] <= burden[right]
+            for left, right in ((Level.L1, Level.L2), (Level.L2, Level.L3))
+        ):
+            raise ValidationError(
+                f"profile.{primitive.value}.burden must be non-decreasing"
+            )
+        if not all(
+            minimum_evidence[left].rank <= minimum_evidence[right].rank
+            for left, right in ((Level.L1, Level.L2), (Level.L2, Level.L3))
+        ):
+            raise ValidationError(
+                f"profile.{primitive.value}.minimum_evidence must be non-decreasing"
+            )
         primitive_profiles[primitive] = PrimitiveProfile(
             primary_need=primary_need,
-            capabilities=capabilities,
-            burden=burden,
-            minimum_evidence=minimum_evidence,
+            capabilities=_frozen_mapping(capabilities),
+            burden=_frozen_mapping(burden),
+            minimum_evidence=_frozen_mapping(minimum_evidence),
         )
 
     return PolicySpec(
         schema_version=data["schema_version"],
         policy_version=_nonempty_string(data["policy_version"], "policy_version"),
-        engine_version=_nonempty_string(data["engine_version"], "engine_version"),
+        engine_version=ENGINE_VERSION,
         thresholds=thresholds,
-        weights=weights,
-        allowed_levels=allowed_levels,
-        level_multipliers=level_multipliers,
-        primitive_profiles=primitive_profiles,
+        weights=_frozen_mapping(weights),
+        allowed_levels=_frozen_mapping(allowed_levels),
+        level_multipliers=_frozen_mapping(level_multipliers),
+        primitive_profiles=_frozen_mapping(primitive_profiles),
         config_hash=content_hash(raw),
     )
 
@@ -245,12 +278,12 @@ def load_templates(path: str | Path) -> TemplateCatalog:
                 message=entry_raw["message"],
                 next_step=entry_raw["next_step"],
             )
-        templates[primitive] = entries
+        templates[primitive] = _frozen_mapping(entries)
     return TemplateCatalog(
         schema_version=data["schema_version"],
         template_version=_nonempty_string(
             data["template_version"], "template_version"
         ),
-        templates=templates,
+        templates=_frozen_mapping(templates),
         config_hash=content_hash(raw),
     )

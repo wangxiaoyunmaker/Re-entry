@@ -3,8 +3,69 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any, Mapping
 
-from .models import DecisionState, Level, Outcome, ValidationError
+from .models import DecisionState, Level, Outcome, Primitive, ValidationError
 from .selector import SelectionEngine
+
+
+SCENARIO_REQUIRED = {"scenario_id", "state"}
+SCENARIO_ORACLES = {
+    "expected_outcome",
+    "expected_selected_ids",
+    "required_reason_codes",
+    "allowed_levels",
+    "allowed_primitive",
+    "forbidden_candidates",
+}
+
+
+def _string_list(value: Any, field_name: str) -> list[str]:
+    if not isinstance(value, list) or any(
+        not isinstance(item, str) or not item for item in value
+    ):
+        raise ValidationError(f"{field_name} must be an array of non-empty strings")
+    return value
+
+
+def _validate_scenario(raw: Mapping[str, Any], index: int) -> None:
+    keys = set(raw)
+    missing = SCENARIO_REQUIRED - keys
+    unknown = keys - SCENARIO_REQUIRED - SCENARIO_ORACLES
+    if missing:
+        raise ValidationError(f"scenario {index} missing fields: {sorted(missing)}")
+    if unknown:
+        raise ValidationError(f"scenario {index} unknown fields: {sorted(unknown)}")
+    if not (keys & SCENARIO_ORACLES):
+        raise ValidationError(f"scenario {index} requires at least one oracle")
+    scenario_id = raw["scenario_id"]
+    if not isinstance(scenario_id, str) or not scenario_id:
+        raise ValidationError(f"scenario {index} requires scenario_id")
+    if "expected_outcome" in raw:
+        try:
+            Outcome(raw["expected_outcome"])
+        except (TypeError, ValueError) as exc:
+            raise ValidationError(
+                f"scenario {scenario_id} has invalid expected_outcome"
+            ) from exc
+    for field_name in (
+        "expected_selected_ids",
+        "required_reason_codes",
+        "forbidden_candidates",
+    ):
+        if field_name in raw:
+            _string_list(raw[field_name], f"scenario {scenario_id}.{field_name}")
+    if "allowed_levels" in raw:
+        levels = _string_list(
+            raw["allowed_levels"], f"scenario {scenario_id}.allowed_levels"
+        )
+        for level in levels:
+            Level.from_value(level)
+    if "allowed_primitive" in raw:
+        try:
+            Primitive(raw["allowed_primitive"])
+        except (TypeError, ValueError) as exc:
+            raise ValidationError(
+                f"scenario {scenario_id} has invalid allowed_primitive"
+            ) from exc
 
 
 def _scenario_checks(
@@ -38,6 +99,10 @@ def _scenario_checks(
 
     allowed_primitive = scenario.get("allowed_primitive")
     if allowed_primitive:
+        if not result_dict["selected_ids"]:
+            failures.append(
+                f"allowed primitive {allowed_primitive} requires a selected candidate"
+            )
         for selected_id in result_dict["selected_ids"]:
             if not selected_id.startswith(f"{allowed_primitive}-"):
                 failures.append(f"selected {selected_id} violates allowed primitive")
@@ -60,15 +125,21 @@ def replay_scenarios(
     ratios: list[float] = []
     total_feasible = 0
     total_dominated = 0
+    scenario_ids: set[str] = set()
+    decision_ids: set[str] = set()
     for index, raw in enumerate(raw_scenarios):
         if not isinstance(raw, Mapping):
             raise ValidationError(f"scenario {index} must be an object")
+        _validate_scenario(raw, index)
         scenario_id = raw.get("scenario_id")
-        if not isinstance(scenario_id, str) or not scenario_id:
-            raise ValidationError(f"scenario {index} requires scenario_id")
-        if "state" not in raw:
-            raise ValidationError(f"scenario {scenario_id} requires state")
+        assert isinstance(scenario_id, str)
+        if scenario_id in scenario_ids:
+            raise ValidationError(f"duplicate scenario_id: {scenario_id}")
+        scenario_ids.add(scenario_id)
         state = DecisionState.from_dict(raw["state"])
+        if state.decision_id in decision_ids:
+            raise ValidationError(f"duplicate decision_id: {state.decision_id}")
+        decision_ids.add(state.decision_id)
         result = engine.select(state)
         result_dict = result.to_dict()
         failures = _scenario_checks(raw, result_dict)

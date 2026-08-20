@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from typing import Iterable
 
 from .candidates import generate_candidates
@@ -20,6 +21,7 @@ from .models import (
 from .rendering import render_brief
 from .scoring import NO_INTERVENTION_SCORE, score_brief, utility
 from .skyline import compute_skyline
+from .version import ENGINE_VERSION
 
 
 def _audit_id(
@@ -29,7 +31,7 @@ def _audit_id(
         "state": state.to_dict(),
         "policy_hash": policy.config_hash,
         "template_hash": templates.config_hash,
-        "engine_version": policy.engine_version,
+        "engine_version": ENGINE_VERSION,
     }
     return hashlib.sha256(canonical_json(material).encode("utf-8")).hexdigest()
 
@@ -52,6 +54,7 @@ class SelectionEngine:
         reason_code: str,
         *,
         warnings: Iterable[str] = (),
+        forced_governance: bool = False,
     ) -> SelectionResult:
         return SelectionResult(
             audit_id=_audit_id(state, self.policy, self.templates),
@@ -65,7 +68,7 @@ class SelectionEngine:
             frontier_ratio=None,
             warnings=tuple(warnings),
             rendered_briefs=(),
-            metadata=self._metadata(state, forced_governance=False),
+            metadata=self._metadata(state, forced_governance=forced_governance),
         )
 
     def _metadata(self, state: DecisionState, forced_governance: bool) -> dict:
@@ -75,9 +78,10 @@ class SelectionEngine:
             "policy_hash": self.policy.config_hash,
             "template_version": self.templates.template_version,
             "template_hash": self.templates.config_hash,
-            "engine_version": self.policy.engine_version,
-            "record_only": True,
+            "engine_version": ENGINE_VERSION,
+            "audit_record_ready": True,
             "forced_governance": forced_governance,
+            "b0_forbidden": forced_governance,
         }
 
     def select(self, state: DecisionState) -> SelectionResult:
@@ -103,13 +107,15 @@ class SelectionEngine:
                 Outcome.REQUEST_CLARIFICATION,
                 "T001_LOW_CONFIDENCE_HIGH_RISK_CONFLICT",
                 warnings=warnings,
+                forced_governance=True,
             )
 
         briefs = generate_candidates(state, self.policy)
         evaluations: list[CandidateEvaluation] = []
         for brief in briefs:
             constraints = evaluate_constraints(brief, state, self.policy)
-            score = score_brief(brief, state, self.policy)
+            allowed = all(record.allowed for record in constraints)
+            score = score_brief(brief, state, self.policy) if allowed else None
             evaluations.append(
                 CandidateEvaluation(
                     brief=brief,
@@ -120,14 +126,19 @@ class SelectionEngine:
 
         feasible = [item for item in evaluations if item.allowed]
         if not feasible:
+            b0_evaluation = next(
+                (item for item in evaluations if item.brief.is_no_intervention), None
+            )
             result = self._terminal_result(
                 state,
                 Outcome.SAFE_HOLD,
                 "T002_EMPTY_FEASIBLE_SET",
                 warnings=warnings,
+                forced_governance=bool(
+                    b0_evaluation is not None and not b0_evaluation.allowed
+                ),
             )
-            result.generated = tuple(evaluations)
-            return result
+            return replace(result, generated=tuple(evaluations))
 
         frontier, witnesses = compute_skyline(
             feasible, self.policy.thresholds.dominance_epsilon
@@ -173,16 +184,19 @@ class SelectionEngine:
                 Outcome.SAFE_HOLD,
                 "T003_NO_SAFE_INTERVENTION",
                 warnings=warnings,
+                forced_governance=forced_governance,
             )
-            result.generated = tuple(evaluations)
-            return result
+            return replace(result, generated=tuple(evaluations))
 
-        top = interventions[0]
-        assert top.gain_vs_no_intervention is not None
-        if (
-            not forced_governance
-            and top.gain_vs_no_intervention <= self.policy.thresholds.gain
-        ):
+        eligible_interventions = interventions
+        if not forced_governance:
+            eligible_interventions = [
+                item
+                for item in interventions
+                if item.gain_vs_no_intervention is not None
+                and item.gain_vs_no_intervention > self.policy.thresholds.gain
+            ]
+        if not eligible_interventions:
             return self._build_result(
                 state,
                 Outcome.NO_INTERVENTION,
@@ -198,13 +212,14 @@ class SelectionEngine:
                 baseline_utility,
             )
 
+        top = eligible_interventions[0]
         selected = [top]
         reason_codes = [
             "S004_FORCED_GOVERNANCE" if forced_governance else "S003_POSITIVE_GAIN"
         ]
         outcome = Outcome.INTERVENE
-        if len(interventions) >= 2:
-            second = interventions[1]
+        if len(eligible_interventions) >= 2:
+            second = eligible_interventions[1]
             assert top.utility is not None and second.utility is not None
             if top.utility - second.utility <= self.policy.thresholds.near_tie:
                 top_need = self.policy.primitive_profiles[top.brief.primitive].primary_need

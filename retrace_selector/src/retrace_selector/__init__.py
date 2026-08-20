@@ -3,6 +3,7 @@
 from .config import load_policy, load_templates
 from .models import DecisionState, SelectionResult
 from .selector import SelectionEngine
+from .version import ENGINE_VERSION
 
 __all__ = [
     "DecisionState",
@@ -10,6 +11,7 @@ __all__ = [
     "SelectionResult",
     "load_policy",
     "load_templates",
+    "ENGINE_VERSION",
 ]
 
-__version__ = "0.1.0"
+__version__ = ENGINE_VERSION

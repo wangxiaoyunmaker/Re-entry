@@ -5,7 +5,6 @@ from .models import (
     CRITERIA,
     DecisionBrief,
     DecisionState,
-    EvidenceCompleteness,
     PolicySpec,
     ScoreVector,
 )
@@ -29,12 +28,7 @@ def score_brief(
         * state.governance_needs.normalized(key)
         for key in ("O", "S", "D")
     }
-    minimum = profile.minimum_evidence[brief.level]
-    evidence = (
-        1.0
-        if minimum is EvidenceCompleteness.NONE
-        else state.evidence_completeness.score
-    )
+    evidence = state.evidence_completeness.score
     workflow = max(0.0, 1.0 - intervention_burden(brief, state, policy))
     return ScoreVector(
         O=benefits["O"],

@@ -37,6 +37,7 @@
   },
   {
     "scenario_id": "C09-high-authorization",
+    "expected_outcome": "INTERVENE",
     "allowed_primitive": "DISPOSITION_COORDINATION",
     "state": {
       "schema_version": "retrace-state-v1",
@@ -210,18 +211,18 @@
   {
     "scenario_id": "C14-near-tie-different-paths",
     "expected_outcome": "PRESENT_CHOICES",
-    "expected_selected_ids": ["RULE_ALIGNMENT-L1", "DISPOSITION_COORDINATION-L1"],
+    "expected_selected_ids": ["VERIFICATION-L1", "PROVENANCE-L1"],
     "required_reason_codes": ["S005_NEAR_TIE_DIFFERENT_PATHS"],
     "state": {
       "schema_version": "retrace-state-v1",
       "decision_id": "C14",
-      "process_state": "REENTRY_OCCASION_OBSERVED",
-      "governance_needs": {"O": 2, "S": 0, "D": 1},
+      "process_state": "EARLY_SUPPORT_OPPORTUNITY",
+      "governance_needs": {"O": 0, "S": 2, "D": 2},
       "evidence": [{"evidence_id": "C14-E1", "source": "OBSERVED"}],
       "consequence": "medium",
       "reversibility": "medium",
       "authorization_risk": "low",
-      "evidence_completeness": "partial",
+      "evidence_completeness": "sufficient",
       "state_confidence": 0.8,
       "recent_interventions": 0,
       "active_verification": false

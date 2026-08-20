@@ -4,6 +4,7 @@ from .models import (
     ConstraintRecord,
     DecisionBrief,
     DecisionState,
+    EvidenceSource,
     Level,
     PolicySpec,
     Primitive,
@@ -86,6 +87,20 @@ def evaluate_constraints(
             evidence_allowed,
             "candidate evidence requirement must be met",
             30,
+        )
+    )
+
+    causal_source_allowed = not (
+        primitive is Primitive.CAUSAL_EXPLANATION
+        and level is not None
+        and level >= Level.L2
+    ) or any(item.source is EvidenceSource.OBSERVED for item in state.evidence)
+    records.append(
+        _record(
+            "C035_CAUSAL_EXPLANATION_REQUIRES_OBSERVATION",
+            causal_source_allowed,
+            "causal explanation at L2 or L3 requires directly observed evidence",
+            35,
         )
     )
 

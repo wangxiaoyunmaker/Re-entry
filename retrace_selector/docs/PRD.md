@@ -6,7 +6,7 @@
 
 ## 2. Primary user
 
-主要用户是研究者和系统设计者。最终 vibe coding 用户只会看到渲染后的最小 Decision Brief，不接触数学分数或完整审计记录。
+主要用户是研究者和系统设计者。若后续接入交互层，最终 vibe coding 用户只应看到渲染后的最小 Decision Brief，不接触数学分数或完整审计记录。
 
 ## 3. Functional requirements
 
@@ -57,13 +57,13 @@ MVP 生成五个单原语的 L1–L3 候选和 `NO_INTERVENTION`。过程状态�
 
 ### FR-9 CLI and replay
 
-CLI 支持单状态选择和批量 canonical scenario replay。Replay 不使用 episode 未来事件。
+CLI 支持单状态选择和批量 canonical scenario replay。历史 episode replay 的输入必须由上游截止在 Occasion 当时；当前选择器不自动验证时序泄漏。
 
 ## 4. Outcomes
 
 | Outcome | Meaning |
 |---|---|
-| `INTERVENE` | 选择一个明确优于不干预的候选 |
+| `INTERVENE` | 选择越过增益门槛的候选；或在 B0 因安全/授权约束不可行时，选择效用最高的安全候选并标记 forced governance |
 | `NO_INTERVENTION` | 干预增益不足或直接委托仍有效 |
 | `PRESENT_CHOICES` | 两个实质不同候选近似并列 |
 | `REQUEST_CLARIFICATION` | 高风险状态与低置信度冲突 |
@@ -88,6 +88,7 @@ CLI 支持单状态选择和批量 canonical scenario replay。Replay 不使用 
 - 低置信度不产生高强度候选；
 - 低置信度与高风险冲突返回 `REQUEST_CLARIFICATION`；
 - 证据不足过滤 `CAUSAL_EXPLANATION-L2/L3`；
+- `DESIGN_ASSUMPTION` 不能单独支撑 partial/sufficient，且高强度因果解释必须有 `OBSERVED` 证据；
 - 高授权风险只允许 `DISPOSITION_COORDINATION-L2/L3`；
 - 高后果且低可逆时不允许普通不干预或 L1；
 - 低风险且高可逆时禁止 L3；
