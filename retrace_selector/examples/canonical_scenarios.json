@@ -1,0 +1,249 @@
+[
+  {
+    "scenario_id": "C01-progressing",
+    "expected_outcome": "NO_INTERVENTION",
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C01",
+      "process_state": "DELEGATION_PROGRESSING",
+      "governance_needs": {"O": 0, "S": 0, "D": 0},
+      "evidence": [{"evidence_id": "C01-E1", "source": "OBSERVED"}],
+      "consequence": "low",
+      "reversibility": "high",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.9,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C02-early-support",
+    "allowed_levels": ["L1"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C02",
+      "process_state": "EARLY_SUPPORT_OPPORTUNITY",
+      "governance_needs": {"O": 2, "S": 0, "D": 0},
+      "evidence": [{"evidence_id": "C02-E1", "source": "OBSERVED"}],
+      "consequence": "low",
+      "reversibility": "high",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.8,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C09-high-authorization",
+    "allowed_primitive": "DISPOSITION_COORDINATION",
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C09",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 1, "D": 3},
+      "evidence": [{"evidence_id": "C09-E1", "source": "OBSERVED"}],
+      "consequence": "high",
+      "reversibility": "medium",
+      "authorization_risk": "high",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.9,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C12-insufficient-causal-evidence",
+    "forbidden_candidates": ["CAUSAL_EXPLANATION-L2", "CAUSAL_EXPLANATION-L3"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C12",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 3, "D": 0},
+      "evidence": [{"evidence_id": "C12-E1", "source": "OBSERVED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.85,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C17-low-confidence-high-authorization",
+    "expected_outcome": "REQUEST_CLARIFICATION",
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C17",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 1, "D": 3},
+      "evidence": [{"evidence_id": "C17-E1", "source": "INFERRED"}],
+      "consequence": "high",
+      "reversibility": "low",
+      "authorization_risk": "high",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.4,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C05-active-verification",
+    "expected_outcome": "INTERVENE",
+    "forbidden_candidates": ["VERIFICATION-L1", "VERIFICATION-L2", "VERIFICATION-L3"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C05",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 1, "D": 3},
+      "evidence": [{"evidence_id": "C05-E1", "source": "OBSERVED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "sufficient",
+      "state_confidence": 0.8,
+      "recent_interventions": 0,
+      "active_verification": true
+    }
+  },
+  {
+    "scenario_id": "C06-high-consequence-low-reversibility",
+    "expected_outcome": "INTERVENE",
+    "expected_selected_ids": ["VERIFICATION-L2"],
+    "forbidden_candidates": ["NO_INTERVENTION", "VERIFICATION-L1", "DISPOSITION_COORDINATION-L1"],
+    "required_reason_codes": ["S004_FORCED_GOVERNANCE"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C06",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 0, "D": 3},
+      "evidence": [{"evidence_id": "C06-E1", "source": "OBSERVED"}],
+      "consequence": "high",
+      "reversibility": "low",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.8,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C07-low-risk-level-cap",
+    "expected_outcome": "INTERVENE",
+    "forbidden_candidates": ["RULE_ALIGNMENT-L3"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C07",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 3, "S": 0, "D": 0},
+      "evidence": [{"evidence_id": "C07-E1", "source": "OBSERVED"}],
+      "consequence": "low",
+      "reversibility": "high",
+      "authorization_risk": "low",
+      "evidence_completeness": "sufficient",
+      "state_confidence": 0.9,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C08-governance-recovering",
+    "expected_outcome": "NO_INTERVENTION",
+    "allowed_levels": ["L1"],
+    "required_reason_codes": ["S002_GAIN_NOT_ABOVE_THRESHOLD"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C08",
+      "process_state": "GOVERNANCE_RECOVERING",
+      "governance_needs": {"O": 0, "S": 2, "D": 1},
+      "evidence": [{"evidence_id": "C08-E1", "source": "OBSERVED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.8,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C10-cooldown",
+    "expected_outcome": "INTERVENE",
+    "allowed_levels": ["L1"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C10",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 2, "S": 2, "D": 2},
+      "evidence": [{"evidence_id": "C10-E1", "source": "OBSERVED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "sufficient",
+      "state_confidence": 0.9,
+      "recent_interventions": 3,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C11-low-confidence-normal-risk",
+    "expected_outcome": "NO_INTERVENTION",
+    "allowed_levels": ["L1"],
+    "required_reason_codes": ["S002_GAIN_NOT_ABOVE_THRESHOLD"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C11",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 2, "S": 0, "D": 0},
+      "evidence": [{"evidence_id": "C11-E1", "source": "INFERRED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.4,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C14-near-tie-different-paths",
+    "expected_outcome": "PRESENT_CHOICES",
+    "expected_selected_ids": ["RULE_ALIGNMENT-L1", "DISPOSITION_COORDINATION-L1"],
+    "required_reason_codes": ["S005_NEAR_TIE_DIFFERENT_PATHS"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C14",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 2, "S": 0, "D": 1},
+      "evidence": [{"evidence_id": "C14-E1", "source": "OBSERVED"}],
+      "consequence": "medium",
+      "reversibility": "medium",
+      "authorization_risk": "low",
+      "evidence_completeness": "partial",
+      "state_confidence": 0.8,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  },
+  {
+    "scenario_id": "C15-empty-feasible-set",
+    "expected_outcome": "SAFE_HOLD",
+    "required_reason_codes": ["T002_EMPTY_FEASIBLE_SET"],
+    "state": {
+      "schema_version": "retrace-state-v1",
+      "decision_id": "C15",
+      "process_state": "REENTRY_OCCASION_OBSERVED",
+      "governance_needs": {"O": 0, "S": 0, "D": 0},
+      "evidence": [],
+      "consequence": "high",
+      "reversibility": "medium",
+      "authorization_risk": "high",
+      "evidence_completeness": "none",
+      "state_confidence": 0.9,
+      "recent_interventions": 0,
+      "active_verification": false
+    }
+  }
+]

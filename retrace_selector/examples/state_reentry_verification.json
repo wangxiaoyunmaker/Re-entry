@@ -1,0 +1,17 @@
+{
+  "schema_version": "retrace-state-v1",
+  "decision_id": "example-reentry-verification",
+  "process_state": "REENTRY_OCCASION_OBSERVED",
+  "governance_needs": {"O": 0, "S": 2, "D": 3},
+  "evidence": [
+    {"evidence_id": "R1434", "source": "OBSERVED"},
+    {"evidence_id": "R1442", "source": "OBSERVED"}
+  ],
+  "consequence": "medium",
+  "reversibility": "medium",
+  "authorization_risk": "low",
+  "evidence_completeness": "partial",
+  "state_confidence": 0.82,
+  "recent_interventions": 1,
+  "active_verification": false
+}
