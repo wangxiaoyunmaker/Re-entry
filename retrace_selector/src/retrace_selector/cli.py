@@ -12,6 +12,7 @@ from .models import DecisionState, ValidationError
 from .real_prefix import build_prefix_manifest, write_jsonl
 from .replay import replay_scenarios
 from .selector import SelectionEngine
+from .subagent_cli import main as subagent_main
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -65,6 +66,9 @@ def _emit(data: dict, output: str | None) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    effective_argv = sys.argv[1:] if argv is None else argv
+    if effective_argv and effective_argv[0] == "subagent":
+        return subagent_main(effective_argv[1:])
     args = _parser().parse_args(argv)
     try:
         if args.command == "build-prefixes":

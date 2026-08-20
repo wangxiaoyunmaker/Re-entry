@@ -27,6 +27,17 @@ PYTHONPATH=src python3 -m retrace_selector.cli replay \
   --templates config/templates.v0.2.json
 ```
 
+Selector sub-agent（仅 `DRY_RUN`）：
+
+```bash
+PYTHONPATH=src python3 -m retrace_selector.cli subagent \
+  --request examples/subagent_request_pilot.json \
+  --policy config/policy.v0.2.json \
+  --templates config/templates.v0.2.json
+```
+
+状态 Skill 位于 `skills/retrace-state-builder/`，负责生成并校验 `retrace-state-v2`；`subagents/retrace-selector/` 是受限的 selector 子 Agent 封装。两者都不执行项目写操作，宿主 Agent 必须在用户确认后才执行干预。
+
 真实 episode 接入：
 
 ```bash

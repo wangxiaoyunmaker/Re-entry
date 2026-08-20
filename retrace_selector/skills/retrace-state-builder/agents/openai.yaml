@@ -1,0 +1,4 @@
+interface:
+  display_name: "ReTrace State Builder"
+  short_description: "Build bounded Cognitive Re-entry state for the selector"
+  default_prompt: "Build a retrace-state-v2 from the bounded context and validate evidence bindings."

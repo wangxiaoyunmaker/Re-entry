@@ -1,0 +1,31 @@
+{
+  "schema_version": "retrace-selector-request-v1",
+  "state": {
+    "schema_version": "retrace-state-v2",
+    "decision_id": "SRE-0017",
+    "process_state": "REENTRY_OCCASION_OBSERVED",
+    "governance_needs": {"O": 3, "S": 2, "D": 1},
+    "evidence": [
+      {
+        "evidence_id": "SRE-0017:context_0018:R23",
+        "source": "OBSERVED",
+        "locator": "SRE-0017/transcript.jsonl#context_0018:R23",
+        "observed_at": "2026-06-26T09:38:03.807Z",
+        "sequence_index": 22,
+        "content_sha256": "302e44bf498902d0afd62f0ba4917bc291ec9dc72a8ae64191cdbb603fa75695",
+        "supports_primitives": ["RULE_ALIGNMENT", "PROVENANCE"],
+        "available_at_decision": true
+      }
+    ],
+    "consequence": "low",
+    "reversibility": "high",
+    "authorization_risk": "low",
+    "evidence_completeness": "partial",
+    "state_confidence": 0.91,
+    "recent_interventions": 0,
+    "active_verification": false
+  },
+  "policy_ref": "config/policy.v0.2.json",
+  "template_ref": "config/templates.v0.2.json",
+  "execution_mode": "DRY_RUN"
+}
