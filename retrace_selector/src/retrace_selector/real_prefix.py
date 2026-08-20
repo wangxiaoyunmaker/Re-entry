@@ -78,24 +78,43 @@ def resolve_onset_position(
 ) -> tuple[int | None, str]:
     """Resolve an onset without guessing across repeated context-local indices."""
 
-    for field in ("proposed_start", "reentry_onset"):
+    resolved: dict[str, tuple[int, str]] = {}
+    unresolved: dict[str, str] = {}
+    for field in ("reentry_onset", "proposed_start"):
         raw = (row.get(field) or "").strip()
+        if not raw:
+            continue
         position = _qualified_position(raw, events)
         if position is not None:
-            return position, f"{field}:qualified"
-
-    raw = (row.get("reentry_onset") or "").strip()
-    if raw.isdigit():
-        record_index = int(raw)
-        hits = [
-            index
-            for index, item in enumerate(events)
-            if item["record_index"] == record_index
-        ]
-        if len(hits) == 1:
-            return hits[0], "reentry_onset:unique_record_index"
-        if len(hits) > 1:
-            return None, "AMBIGUOUS_CONTEXT_LOCAL_RECORD_INDEX"
+            resolved[field] = (position, f"{field}:qualified")
+            continue
+        if raw.isdigit():
+            record_index = int(raw)
+            hits = [
+                index
+                for index, item in enumerate(events)
+                if item["record_index"] == record_index
+            ]
+            if len(hits) == 1:
+                resolved[field] = (hits[0], f"{field}:unique_record_index")
+            elif len(hits) > 1:
+                unresolved[field] = "AMBIGUOUS_CONTEXT_LOCAL_RECORD_INDEX"
+            else:
+                unresolved[field] = "UNRESOLVED_ONSET"
+        else:
+            unresolved[field] = "UNRESOLVED_ONSET"
+    if len(resolved) == 2:
+        positions = {item[0] for item in resolved.values()}
+        if len(positions) != 1:
+            return None, "CONFLICTING_ONSET_FIELDS"
+    if "reentry_onset" in resolved:
+        return resolved["reentry_onset"]
+    if "proposed_start" in resolved:
+        return resolved["proposed_start"]
+    if "reentry_onset" in unresolved:
+        return None, unresolved["reentry_onset"]
+    if "proposed_start" in unresolved:
+        return None, unresolved["proposed_start"]
     return None, "UNRESOLVED_ONSET"
 
 

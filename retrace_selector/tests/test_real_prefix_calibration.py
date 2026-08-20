@@ -9,6 +9,7 @@ import unittest
 
 from retrace_selector.calibration import (
     CALIBRATION_REVIEW_SCHEMA,
+    CALIBRATION_TARGET_SCHEMA,
     build_calibration_review_templates,
     calibrate_policy,
 )
@@ -69,6 +70,19 @@ def reviewed_case(case_id: str, group: str, needs: dict, expected: str, primitiv
     if any(needs.values()):
         need = max(needs, key=needs.get)
         item_evidence = [evidence(f"{case_id}:E1", need)]
+    prefix_source = item_evidence[0] if item_evidence else evidence(f"{case_id}:P0", "O")
+    prefix_reference = {
+        "evidence_id": prefix_source["evidence_id"],
+        "locator": prefix_source["locator"],
+        "sequence_index": 0,
+        "source_context": "context_0001",
+        "record_index": 1,
+        "observed_at": "2026-08-20T00:00:00Z",
+        "role": "user",
+        "content_sha256": prefix_source["content_sha256"],
+        "temporal_role": "TRIGGER",
+        "available_at_decision": True,
+    }
     return {
         "schema_version": CALIBRATION_REVIEW_SCHEMA,
         "case_id": case_id,
@@ -76,20 +90,21 @@ def reviewed_case(case_id: str, group: str, needs: dict, expected: str, primitiv
         "stratum": "core",
         "prefix": {
             "status": "READY",
+            "prefix_sha256": "a" * 64,
+            "onset": {
+                "sequence_index": 0,
+                "source_context": "context_0001",
+                "record_index": 1,
+                "locator": prefix_reference["locator"],
+            },
             "leakage_check": "PASS",
-            "available_evidence": [
-                {
-                    "evidence_id": item["evidence_id"],
-                    "locator": item["locator"],
-                    "sequence_index": item["sequence_index"],
-                    "content_sha256": item["content_sha256"],
-                }
-                for item in item_evidence
-            ],
+            "available_evidence": [prefix_reference],
         },
         "review": {
             "status": "APPROVED",
             "reviewer": "test",
+            "reviewed_at": "2026-08-20T00:00:00Z",
+            "tool_version": "test-review-tool-v1",
             "state": {
                 "schema_version": "retrace-state-v2",
                 "decision_id": case_id,
@@ -105,16 +120,84 @@ def reviewed_case(case_id: str, group: str, needs: dict, expected: str, primitiv
                 "active_verification": False,
             },
         },
-        "calibration_target": {
-            "selector_visible": False,
-            "expected_outcome": expected,
-            "acceptable_primitives": primitives,
-        },
-        "eligibility": {"primary_calibration": True},
     }
 
 
+def calibration_target(case_id: str, expected: str, primitives: list[str]):
+    return {
+        "schema_version": CALIBRATION_TARGET_SCHEMA,
+        "case_id": case_id,
+        "selector_visible": False,
+        "expected_outcome": expected,
+        "acceptable_primitives": primitives,
+    }
+
+
+def write_targets(directory: Path, cases: list[dict]) -> Path:
+    path = directory / "targets.jsonl"
+    records = [
+        calibration_target(
+            case["case_id"],
+            "NO_INTERVENTION" if not any(case["review"]["state"]["governance_needs"].values()) else "INTERVENE",
+            [] if not any(case["review"]["state"]["governance_needs"].values()) else [
+                "RULE_ALIGNMENT" if case["review"]["state"]["governance_needs"]["O"] else "VERIFICATION"
+            ],
+        )
+        for case in cases
+    ]
+    path.write_text("".join(json.dumps(item) + "\n" for item in records), encoding="utf-8")
+    return path
+
+
+def write_prefixes(directory: Path, cases: list[dict]) -> Path:
+    path = directory / "prefixes.jsonl"
+    records = [
+        {
+            "schema_version": "retrace-prefix-manifest-v1",
+            "episode_id": case["case_id"],
+            "participant_group": case["participant_group"],
+            "stratum": "core",
+            "status": "READY",
+            "prefix_sha256": case["prefix"]["prefix_sha256"],
+            "transcript_sha256": "b" * 64,
+            "onset": case["prefix"]["onset"],
+            "prefix_event_count": len(case["prefix"]["available_evidence"]),
+            "leakage_check": "PASS",
+            "event_references": case["prefix"]["available_evidence"],
+        }
+        for case in cases
+    ]
+    path.write_text("".join(json.dumps(item) + "\n" for item in records), encoding="utf-8")
+    return path
+
+
 class PrefixBuilderTests(unittest.TestCase):
+    def test_conflicting_onset_fields_require_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            transcript = root / "transcript.jsonl"
+            write_transcript(
+                transcript,
+                [
+                    transcript_event("context_0001", 1, "user", "a"),
+                    transcript_event("context_0001", 2, "user", "b"),
+                    transcript_event("context_0001", 3, "assistant", "future"),
+                ],
+            )
+            inventory = write_inventory(
+                root,
+                [{
+                    "strict_id": "SRE-T099",
+                    "participant_id": "person-x",
+                    "proposed_start": "context_0001:R3",
+                    "reentry_onset": "2",
+                    "transcript_path": str(transcript),
+                }],
+            )
+            records, _ = build_prefix_manifest([(inventory, "core")])
+        self.assertEqual(records[0]["status"], "REVIEW_REQUIRED")
+        self.assertEqual(records[0]["reason"], "CONFLICTING_ONSET_FIELDS")
+
     def test_multiline_message_in_jsonl_is_parsed_without_exporting_text(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -235,8 +318,10 @@ class CalibrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "annotations.jsonl"
             path.write_text(json.dumps(annotation) + "\n", encoding="utf-8")
-            templates, report = build_calibration_review_templates([prefix], path)
-        target = templates[0]["calibration_target"]
+            templates, targets, report = build_calibration_review_templates([prefix], path)
+        target = targets[0]
+        self.assertNotIn("calibration_target", templates[0])
+        self.assertNotIn("eligibility", templates[0])
         self.assertFalse(target["selector_visible"])
         self.assertEqual(
             target["post_onset_target_pointers"],
@@ -250,10 +335,13 @@ class CalibrationTests(unittest.TestCase):
         )
         case["review"]["status"] = "PENDING"
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "reviews.jsonl"
+            root = Path(directory)
+            path = root / "reviews.jsonl"
             path.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            targets = write_targets(root, [case])
+            prefixes = write_prefixes(root, [case])
             with self.assertRaisesRegex(ValidationError, "approved cases"):
-                calibrate_policy(path, engine().policy, engine().templates, minimum_cases=1)
+                calibrate_policy(path, targets, prefixes, engine().policy, engine().templates, minimum_cases=1)
 
     def test_calibration_rejects_evidence_that_does_not_match_prefix(self):
         case = reviewed_case(
@@ -261,10 +349,94 @@ class CalibrationTests(unittest.TestCase):
         )
         case["review"]["state"]["evidence"][0]["content_sha256"] = "f" * 64
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "reviews.jsonl"
+            root = Path(directory)
+            path = root / "reviews.jsonl"
             path.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            targets = write_targets(root, [case])
+            prefixes = write_prefixes(root, [case])
             with self.assertRaisesRegex(ValidationError, "does not match prefix"):
-                calibrate_policy(path, engine().policy, engine().templates, minimum_cases=1)
+                calibrate_policy(path, targets, prefixes, engine().policy, engine().templates, minimum_cases=1)
+
+    def test_calibration_rejects_tampered_review_prefix(self):
+        case = reviewed_case(
+            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prefixes = write_prefixes(root, [case])
+            targets = write_targets(root, [case])
+            case["prefix"]["prefix_sha256"] = "b" * 64
+            reviews = root / "reviews.jsonl"
+            reviews.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "does not match prefix"):
+                calibrate_policy(
+                    reviews,
+                    targets,
+                    prefixes,
+                    engine().policy,
+                    engine().templates,
+                    minimum_cases=1,
+                )
+
+    def test_calibration_revalidates_manifest_temporal_invariants(self):
+        case = reviewed_case(
+            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviews = root / "reviews.jsonl"
+            reviews.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            prefixes = write_prefixes(root, [case])
+            manifest = json.loads(prefixes.read_text())
+            manifest["event_references"][0]["sequence_index"] = 99
+            prefixes.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "invalid evidence sequence"):
+                calibrate_policy(
+                    reviews,
+                    write_targets(root, [case]),
+                    prefixes,
+                    engine().policy,
+                    engine().templates,
+                    minimum_cases=1,
+                )
+
+    def test_calibration_rejects_approval_without_reviewer_metadata(self):
+        case = reviewed_case(
+            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+        )
+        case["review"]["reviewer"] = None
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviews = root / "reviews.jsonl"
+            reviews.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "needs review.reviewer"):
+                calibrate_policy(
+                    reviews,
+                    write_targets(root, [case]),
+                    write_prefixes(root, [case]),
+                    engine().policy,
+                    engine().templates,
+                    minimum_cases=1,
+                )
+
+    def test_calibration_rejects_one_group_configuration(self):
+        case = reviewed_case(
+            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviews = root / "reviews.jsonl"
+            reviews.write_text(json.dumps(case) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "cannot be lower than 3"):
+                calibrate_policy(
+                    reviews,
+                    write_targets(root, [case]),
+                    write_prefixes(root, [case]),
+                    engine().policy,
+                    engine().templates,
+                    minimum_cases=1,
+                    minimum_groups=1,
+                )
 
     def test_calibration_runs_grouped_cross_validation_on_approved_prefixes(self):
         cases = [
@@ -279,13 +451,18 @@ class CalibrationTests(unittest.TestCase):
             ),
         ]
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "reviews.jsonl"
+            root = Path(directory)
+            path = root / "reviews.jsonl"
             path.write_text(
                 "".join(json.dumps(case) + "\n" for case in cases),
                 encoding="utf-8",
             )
+            targets = write_targets(root, cases)
+            prefixes = write_prefixes(root, cases)
             result = calibrate_policy(
                 path,
+                targets,
+                prefixes,
                 engine().policy,
                 engine().templates,
                 minimum_cases=3,

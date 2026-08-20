@@ -52,8 +52,29 @@ def candidate_evidence_completeness(
     state: DecisionState,
     policy: PolicySpec,
 ) -> EvidenceCompleteness:
-    if not supporting_evidence(brief, state, policy):
+    linked = supporting_evidence(brief, state, policy)
+    if not linked:
         return EvidenceCompleteness.NONE
+    if state.evidence_completeness is EvidenceCompleteness.NONE:
+        return EvidenceCompleteness.NONE
+    if state.evidence_completeness is EvidenceCompleteness.PARTIAL:
+        return EvidenceCompleteness.PARTIAL
+    all_empirical = supporting_evidence(
+        brief,
+        state,
+        policy,
+        empirical_only=False,
+    )
+    empirical_state_evidence = tuple(
+        item
+        for item in state.evidence
+        if item.source is not EvidenceSource.DESIGN_ASSUMPTION
+    )
+    linked_empirical = tuple(
+        item for item in all_empirical if item.source is not EvidenceSource.DESIGN_ASSUMPTION
+    )
+    if len(linked_empirical) < len(empirical_state_evidence):
+        return EvidenceCompleteness.PARTIAL
     return state.evidence_completeness
 
 

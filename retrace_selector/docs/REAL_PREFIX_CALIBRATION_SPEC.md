@@ -14,6 +14,8 @@
 2. 在整份 transcript 中唯一的数字 `record_index`；
 3. 其他情况标记 `REVIEW_REQUIRED`，禁止猜测。
 
+若 `proposed_start` 与 `reentry_onset` 均可解析但指向不同事件，标记 `CONFLICTING_ONSET_FIELDS`，不得采用较晚边界。
+
 Transcript 可以包含跨行消息对象。解析器允许字符串内的未转义换行，但仍严格要求每个事件是对象，并包含 `source_context`、`record_index` 和 `role`。
 
 ## 3. Prefix manifest
@@ -37,20 +39,22 @@ Manifest 不保存原始 `text/audit_text`。`leakage_check=PASS` 要求所有�
 - 至少一个 `supports_needs` 或 `supports_primitives` 绑定；
 - `source ∈ {OBSERVED, INFERRED, DESIGN_ASSUMPTION}`。
 
-若设置 `supports_primitives`，证据只支持这些原语；否则按 `supports_needs` 支持以该 need 为 primary need 的候选。硬约束、E 分数和 Decision Brief 均只使用当前候选的支持证据。
+若设置 `supports_primitives`，证据只支持这些原语；否则按 `supports_needs` 支持以该 need 为 primary need 的候选。硬约束、E 分数和 Decision Brief 均只使用当前候选的支持证据。若 state 的全局完整度为 sufficient，但只有部分经验性证据与该候选绑定，候选级完整度保守降为 partial，避免继承其他候选的证据强度。
 
-Calibration ingestion 会把人工 state 中每条证据的 ID、locator、sequence index 与内容哈希和 prefix manifest 逐项核对，防止替换引用或借用 post-onset 证据。
+Calibration ingestion 把独立的 `prefix_manifest.jsonl` 作为权威来源，不信任 review 文件自报的 stratum、participant group、泄漏状态或证据清单。加载时会重新验证事件 ID/locator/sequence 唯一性、连续顺序、onset 与最后事件一致、`available_at_decision=true`、数量和哈希格式。随后把人工 state 中每条证据的 ID、locator、sequence index 与内容哈希和权威 manifest 逐项核对，防止替换引用或借用 post-onset 证据。
 
 ## 5. 标签隔离与人工复核
 
-完整 episode 的 v2.2 编码仅用于构造 `calibration_target`：
+完整 episode 的 v2.2 编码仅用于构造单独的 `calibration_targets.jsonl`：
 
 - RD01 映射为 expected `INTERVENE`，RD02 映射为 `NO_INTERVENTION`；
 - RO/RA/EV/DR 编码映射为一个或多个可接受原语；
 - onset 后的 source pointers 单独列为 `post_onset_target_pointers`；
 - 整个 target 固定标记 `selector_visible=false`。
 
-Reviewer 应在不查看 calibration target 的界面或分离文件中，只依据 prefix 编码 state、证据来源和候选绑定。只有 `review.status=APPROVED`、core、READY、泄漏 PASS 的案例进入主校准；edge 仅用于敏感性分析，excluded 不参与拟合。
+`calibration_review_template.jsonl` 不包含任何 target 字段或由 target 推导的 eligibility 字段，Reviewer 只依据 prefix 编码 state、证据来源和候选绑定。拟合阶段再按 `case_id` 将批准的 review 与隔离的 target 连接，并要求 state 的 `decision_id` 与该 case ID 一致。APPROVED 还必须记录非空 reviewer、reviewed_at 与 tool_version。只有 core、READY、泄漏 PASS 的案例进入主校准；edge 仅用于敏感性分析，excluded 不参与拟合。
+
+当前 review template 为无正文的可审计交换格式，不是完整标注界面。人工批准前还需由本地只读 review UI 根据权威 manifest 只展示 onset 及之前的原始事件；不得让 reviewer 直接浏览完整 transcript 或 target 文件。
 
 ## 6. 参数搜索与评估
 
@@ -60,7 +64,7 @@ Reviewer 应在不查看 calibration target 的界面或分离文件中，只依
 - `gain` 阈值；
 - `near_tie` 阈值。
 
-目标优先级依次为：整体匹配率、目标原语召回、较低过度干预率、较低不足干预率、与原设计参数的较小偏移。评估按匿名 participant group 分组，最多五折交叉验证，避免同一参与者的 episode 同时进入训练和测试。
+目标优先级依次为：整体匹配率、目标原语召回、较低过度干预率、较低不足干预率、与原设计参数的较小偏移。评估至少要求 3 个匿名 participant group，并按 group 做最多五折交叉验证，避免同一参与者的 episode 同时进入训练和测试及出现空训练折。
 
 输出是版本化参数建议与 held-out 指标，不自动覆盖 policy，也不解释为干预效果或因果最优。
 

@@ -43,6 +43,8 @@ PYTHONPATH=src python3 -m retrace_selector.cli build-prefixes \
 ```bash
 PYTHONPATH=src python3 -m retrace_selector.cli calibrate \
   --reviews artifacts/real_prefix_20260820/calibration_review_template.jsonl \
+  --targets artifacts/real_prefix_20260820/calibration_targets.jsonl \
+  --prefix-manifest artifacts/real_prefix_20260820/prefix_manifest.jsonl \
   --policy config/policy.v0.2.json \
   --templates config/templates.v0.2.json \
   --output artifacts/real_prefix_20260820/calibration_result.json

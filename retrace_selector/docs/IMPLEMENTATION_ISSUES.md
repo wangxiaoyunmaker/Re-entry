@@ -95,7 +95,7 @@
 ## 2026-08-20 — I-016：完整 episode 编码会造成结果泄漏
 
 - **问题：**v2.2 的 recovery/action/evidence/decision 编码及 source pointers 覆盖 onset 之后的用户行动，不能直接生成选择器输入。
-- **决策：**物理分离 prefix state 与 calibration target。选择器只能看到 onset 及之前的引用；完整编码标记 `selector_visible=false`。人工 state 中的 evidence ID、locator、sequence index、content hash 必须与 prefix manifest 完全一致。
+- **决策：**物理分离 `calibration_review_template.jsonl` 与 `calibration_targets.jsonl`。前者不含 target；选择器只能看到 onset 及之前的引用。拟合时才按 case ID 连接标记为 `selector_visible=false` 的完整编码标签，并以独立 `prefix_manifest.jsonl` 为权威源重新校验 stratum、participant group、泄漏状态和全部证据元数据。人工 state 中的 evidence ID、locator、sequence index、content hash 必须与 manifest 完全一致。
 - **状态：**Resolved by schema and fail-closed validation。
 
 ## 2026-08-20 — I-017：现有样本不足以诚实完成经验校准
@@ -103,3 +103,15 @@
 - **问题：**现有 v2.2 标注只有 20 例，其中 core 7 例；20 例均未完成只看 prefix 的人工状态复核。默认 calibration gate 要求至少 10 个批准案例和 3 个参与者组。
 - **决策：**已生成 20 例 review template，但保持 `PENDING`。当前 CLI 应返回 `approved cases; got 0`，不得输出“已校准”参数。需先扩充 core 编码并完成盲于 post-onset 标签的 prefix review。
 - **状态：**Open empirical data gate；代码管线已完成。
+
+## 2026-08-20 — I-018：当前 review template 不能单独支持盲审
+
+- **问题：**为避免敏感正文复制，prefix manifest/review template 只保存定位符和哈希。研究者仅打开该文件无法理解事件内容；若直接打开完整 transcript，又可能看到 onset 后标签信息。
+- **决策：**本版本不把正文写入可提交产物。正式复核前需增加一个本地只读 review UI：按权威 manifest 读取源 transcript、只显示 `sequence_index <= onset` 的内容，并把 target 文件保持不可访问。该 UI 不是参数搜索内核的一部分。
+- **状态：**Open human-review tooling gate；不影响 prefix 构建与泄漏审计，但阻断人工 state 批准。
+
+## 2026-08-20 — I-019：校准入口不能信任自报 PASS 或空审批
+
+- **问题：**外部文件可手工把 manifest 标成 PASS、把 review 标成 APPROVED，或把 participant-group CV 降成无训练集的一折。
+- **决策：**calibrate 重新验证 manifest 的时序/唯一性/onset/哈希格式；APPROVED 强制 reviewer、reviewed_at、tool_version；state decision ID 必须匹配 case；group gate 不得低于 3。trial hash 绑定基础 policy hash，输出记录 engine 与全部输入文件 hash。
+- **状态：**Resolved with negative regression tests。

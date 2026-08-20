@@ -46,6 +46,8 @@ def _parser() -> argparse.ArgumentParser:
     calibrate.add_argument("--policy", required=True)
     calibrate.add_argument("--templates", required=True)
     calibrate.add_argument("--reviews", required=True)
+    calibrate.add_argument("--targets", required=True)
+    calibrate.add_argument("--prefix-manifest", required=True)
     calibrate.add_argument("--output", required=True)
     calibrate.add_argument("--minimum-cases", type=int, default=10)
     calibrate.add_argument("--minimum-groups", type=int, default=3)
@@ -76,10 +78,11 @@ def main(argv: list[str] | None = None) -> int:
             write_jsonl(output_dir / "prefix_manifest.jsonl", records)
             _emit(report, str(output_dir / "prefix_build_report.json"))
             if args.annotations:
-                reviews, review_report = build_calibration_review_templates(
+                reviews, targets, review_report = build_calibration_review_templates(
                     records, args.annotations
                 )
                 write_jsonl(output_dir / "calibration_review_template.jsonl", reviews)
+                write_jsonl(output_dir / "calibration_targets.jsonl", targets)
                 _emit(
                     review_report,
                     str(output_dir / "calibration_template_report.json"),
@@ -92,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "calibrate":
             calibration = calibrate_policy(
                 args.reviews,
+                args.targets,
+                args.prefix_manifest,
                 policy,
                 templates,
                 minimum_cases=args.minimum_cases,

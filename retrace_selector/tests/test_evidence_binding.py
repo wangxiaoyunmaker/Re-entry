@@ -4,7 +4,7 @@ import hashlib
 import unittest
 
 from retrace_selector.constraints import evaluate_constraints
-from retrace_selector.evidence import supporting_evidence
+from retrace_selector.evidence import candidate_evidence_completeness, supporting_evidence
 from retrace_selector.models import (
     DecisionBrief,
     DecisionState,
@@ -110,6 +110,20 @@ class EvidenceBindingTests(unittest.TestCase):
             brief, decision_state, self.engine.policy, self.engine.templates
         )
         self.assertEqual(rendered.evidence_ids, ("E-D",))
+
+    def test_candidate_cannot_inherit_sufficient_from_unrelated_evidence(self):
+        decision_state = v2_state(
+            evidence=[
+                bound_evidence("E-O", needs=["O"]),
+                bound_evidence("E-D", needs=["D"]),
+            ],
+            governance_needs={"O": 3, "S": 0, "D": 3},
+        )
+        brief = DecisionBrief.intervention(Primitive.VERIFICATION, Level.L2)
+        self.assertEqual(
+            candidate_evidence_completeness(brief, decision_state, self.engine.policy).value,
+            "partial",
+        )
 
 
 if __name__ == "__main__":
