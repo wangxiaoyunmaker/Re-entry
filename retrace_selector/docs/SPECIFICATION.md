@@ -2,10 +2,10 @@
 
 ## 1. Versions
 
-- State schema: `retrace-state-v1`
+- State schema: `retrace-state-v1` (legacy) and `retrace-state-v2` (bound prefix evidence)
 - Policy schema: `retrace-policy-v1`
 - Template schema: `retrace-templates-v1`
-- Engine: `0.1.0`
+- Engine: `0.2.0`
 
 ## 2. Closed enums
 

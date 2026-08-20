@@ -133,14 +133,30 @@ class EvidenceRef:
     evidence_id: str
     source: EvidenceSource
     locator: str | None = None
+    observed_at: str | None = None
+    sequence_index: int | None = None
+    content_sha256: str | None = None
+    supports_needs: tuple[str, ...] = ()
+    supports_primitives: tuple[Primitive, ...] = ()
+    available_at_decision: bool | None = None
 
     @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> "EvidenceRef":
+    def from_dict(
+        cls, raw: Mapping[str, Any], *, require_binding: bool = False
+    ) -> "EvidenceRef":
         data = _require_mapping(raw, "evidence item")
         _check_keys(
             data,
             required={"evidence_id", "source"},
-            optional={"locator"},
+            optional={
+                "locator",
+                "observed_at",
+                "sequence_index",
+                "content_sha256",
+                "supports_needs",
+                "supports_primitives",
+                "available_at_decision",
+            },
             context="evidence item",
         )
         evidence_id = data["evidence_id"]
@@ -149,11 +165,68 @@ class EvidenceRef:
         locator = data.get("locator")
         if locator is not None and (not isinstance(locator, str) or not locator.strip()):
             raise ValidationError("evidence locator must be a non-empty string when set")
+        observed_at = data.get("observed_at")
+        if observed_at is not None and (
+            not isinstance(observed_at, str) or not observed_at.strip()
+        ):
+            raise ValidationError("observed_at must be a non-empty string when set")
+        sequence_index = data.get("sequence_index")
+        if sequence_index is not None:
+            sequence_index = _nonnegative_int(sequence_index, "evidence sequence_index")
+        content_sha256 = data.get("content_sha256")
+        if content_sha256 is not None and (
+            not isinstance(content_sha256, str)
+            or len(content_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in content_sha256)
+        ):
+            raise ValidationError("content_sha256 must be a lowercase SHA-256 hex digest")
+        raw_needs = data.get("supports_needs", [])
+        if not isinstance(raw_needs, list) or any(item not in NEEDS for item in raw_needs):
+            raise ValidationError("supports_needs must contain only O, S, or D")
+        if len(set(raw_needs)) != len(raw_needs):
+            raise ValidationError("supports_needs must not contain duplicates")
+        raw_primitives = data.get("supports_primitives", [])
+        if not isinstance(raw_primitives, list):
+            raise ValidationError("supports_primitives must be an array")
+        try:
+            supports_primitives = tuple(Primitive(item) for item in raw_primitives)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("supports_primitives contains an unknown primitive") from exc
+        if len(set(supports_primitives)) != len(supports_primitives):
+            raise ValidationError("supports_primitives must not contain duplicates")
+        available_at_decision = data.get("available_at_decision")
+        if available_at_decision is not None and not isinstance(
+            available_at_decision, bool
+        ):
+            raise ValidationError("available_at_decision must be boolean when set")
         try:
             source = EvidenceSource(data["source"])
         except (TypeError, ValueError) as exc:
             raise ValidationError(f"unknown evidence source: {data['source']}") from exc
-        return cls(evidence_id=evidence_id.strip(), source=source, locator=locator)
+        if require_binding:
+            if locator is None or sequence_index is None or content_sha256 is None:
+                raise ValidationError(
+                    "retrace-state-v2 evidence requires locator, sequence_index, and content_sha256"
+                )
+            if available_at_decision is not True:
+                raise ValidationError(
+                    "retrace-state-v2 evidence must be available_at_decision=true"
+                )
+            if not raw_needs and not supports_primitives:
+                raise ValidationError(
+                    "retrace-state-v2 evidence requires a need or primitive binding"
+                )
+        return cls(
+            evidence_id=evidence_id.strip(),
+            source=source,
+            locator=locator,
+            observed_at=observed_at,
+            sequence_index=sequence_index,
+            content_sha256=content_sha256,
+            supports_needs=tuple(raw_needs),
+            supports_primitives=supports_primitives,
+            available_at_decision=available_at_decision,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -162,6 +235,20 @@ class EvidenceRef:
         }
         if self.locator is not None:
             result["locator"] = self.locator
+        if self.observed_at is not None:
+            result["observed_at"] = self.observed_at
+        if self.sequence_index is not None:
+            result["sequence_index"] = self.sequence_index
+        if self.content_sha256 is not None:
+            result["content_sha256"] = self.content_sha256
+        if self.supports_needs:
+            result["supports_needs"] = list(self.supports_needs)
+        if self.supports_primitives:
+            result["supports_primitives"] = [
+                primitive.value for primitive in self.supports_primitives
+            ]
+        if self.available_at_decision is not None:
+            result["available_at_decision"] = self.available_at_decision
         return result
 
 
@@ -223,7 +310,7 @@ class DecisionState:
             "active_verification",
         }
         _check_keys(data, required=required, context="state")
-        if data["schema_version"] != "retrace-state-v1":
+        if data["schema_version"] not in {"retrace-state-v1", "retrace-state-v2"}:
             raise ValidationError(f"unsupported state schema: {data['schema_version']}")
         decision_id = data["decision_id"]
         if not isinstance(decision_id, str) or not decision_id.strip():
@@ -239,7 +326,11 @@ class DecisionState:
         raw_evidence = data["evidence"]
         if not isinstance(raw_evidence, list):
             raise ValidationError("evidence must be an array")
-        evidence = tuple(EvidenceRef.from_dict(item) for item in raw_evidence)
+        require_binding = data["schema_version"] == "retrace-state-v2"
+        evidence = tuple(
+            EvidenceRef.from_dict(item, require_binding=require_binding)
+            for item in raw_evidence
+        )
         evidence_ids = [item.evidence_id for item in evidence]
         if len(set(evidence_ids)) != len(evidence_ids):
             raise ValidationError("evidence IDs must be unique")

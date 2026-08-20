@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .evidence import candidate_evidence_completeness, supporting_evidence
 from .models import (
     ConstraintRecord,
     DecisionBrief,
@@ -80,7 +81,9 @@ def evaluate_constraints(
     if not brief.is_no_intervention:
         assert primitive is not None and level is not None
         minimum = policy.primitive_profiles[primitive].minimum_evidence[level]
-        evidence_allowed = state.evidence_completeness.rank >= minimum.rank
+        evidence_allowed = (
+            candidate_evidence_completeness(brief, state, policy).rank >= minimum.rank
+        )
     records.append(
         _record(
             "C030_MINIMUM_EVIDENCE",
@@ -94,7 +97,10 @@ def evaluate_constraints(
         primitive is Primitive.CAUSAL_EXPLANATION
         and level is not None
         and level >= Level.L2
-    ) or any(item.source is EvidenceSource.OBSERVED for item in state.evidence)
+    ) or any(
+        item.source is EvidenceSource.OBSERVED
+        for item in supporting_evidence(brief, state, policy)
+    )
     records.append(
         _record(
             "C035_CAUSAL_EXPLANATION_REQUIRES_OBSERVATION",

@@ -1,7 +1,7 @@
 {
   "schema_version": "retrace-policy-v1",
   "policy_version": "skyline-mvp-v0.2",
-  "engine_version": "0.1.0",
+  "engine_version": "0.2.0",
   "thresholds": {
     "low_confidence": 0.6,
     "gain": 0.05,

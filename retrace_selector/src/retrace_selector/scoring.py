@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .constraints import intervention_burden
+from .evidence import candidate_evidence_score
 from .models import (
     CRITERIA,
     DecisionBrief,
@@ -28,7 +29,7 @@ def score_brief(
         * state.governance_needs.normalized(key)
         for key in ("O", "S", "D")
     }
-    evidence = state.evidence_completeness.score
+    evidence = candidate_evidence_score(brief, state, policy)
     workflow = max(0.0, 1.0 - intervention_burden(brief, state, policy))
     return ScoreVector(
         O=benefits["O"],

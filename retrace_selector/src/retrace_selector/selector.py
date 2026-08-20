@@ -274,7 +274,8 @@ class SelectionEngine:
         baseline_utility: float,
     ) -> SelectionResult:
         rendered = tuple(
-            render_brief(item.brief, state, self.templates) for item in selected
+            render_brief(item.brief, state, self.policy, self.templates)
+            for item in selected
         )
         metadata = self._metadata(state, forced_governance)
         metadata["baseline_utility"] = baseline_utility
