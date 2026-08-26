@@ -106,8 +106,8 @@ PYTHONPATH=src python3 -m retrace_selector.cli calibrate \
 - [Implementation issues](docs/IMPLEMENTATION_ISSUES.md)
 - [Real prefix and calibration specification](docs/REAL_PREFIX_CALIBRATION_SPEC.md)
 - [v0.6 runtime integration](docs/RUNTIME_INTEGRATION_V06.md)
-- [Skill and Selector subagent technical design](../0820-ReTrace-Skill与Selector-子Agent技术方案-v0.1.md)
-- [Observer LLM technical design](../0820-ReTrace-Observer-LLM技术方案-v0.1.md)
+- [Online inference technical design](../retrace-online-inference-technical-design.md)
+- [Codex plugin technical design](../retrace-codex-plugin-technical-design-v0.1.md)
 
 ## Package boundary
 
