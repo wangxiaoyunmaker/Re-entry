@@ -29,7 +29,7 @@ class SelectorSubagentTests(unittest.TestCase):
             schema_version="retrace-state-v2",
             decision_id="subagent-test",
             process_state="REENTRY_OCCASION_OBSERVED",
-            governance_needs={"O": 0, "S": 0, "D": 3},
+            support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 0, "evidence_action_governance": 3},
             evidence=[evidence],
             evidence_completeness="partial",
             **overrides,
@@ -51,7 +51,8 @@ class SelectorSubagentTests(unittest.TestCase):
         self.assertEqual(response["schema_version"], "retrace-selector-response-v1")
         self.assertEqual(response["execution_mode"], "DRY_RUN")
         result = response["result"]
-        self.assertEqual(result["outcome"], "NO_INTERVENTION")
+        self.assertEqual(result["outcome"], "INTERVENE")
+        self.assertEqual(result["selected_ids"], ["VERIFICATION-L2"])
         self.assertTrue(result["decision_digest"])
 
     def test_subagent_rejects_non_dry_run(self):

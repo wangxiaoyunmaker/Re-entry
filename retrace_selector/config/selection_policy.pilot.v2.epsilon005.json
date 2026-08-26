@@ -1,0 +1,15 @@
+{
+  "beta": 0.75,
+  "eta": 0.05,
+  "epsilon": 0.005,
+  "evidence_floor_when_limited": 0.60,
+  "workflow_decay_tau_seconds": 300,
+  "workflow_exposure_lambda": 0.05,
+  "semantic_hint_soft_margin": 0.12,
+  "same_chain_cooldown_seconds": 300,
+  "long_no_response_seconds": 900,
+  "selection_rule_version": "SELECTOR-V2-PILOT-EPSILON-005",
+  "semantic_hint_min_confidence": "MEDIUM",
+  "enforce_family_gate": true,
+  "enforce_intensity_cap": true
+}

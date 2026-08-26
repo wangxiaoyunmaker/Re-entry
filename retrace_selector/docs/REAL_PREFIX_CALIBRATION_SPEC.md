@@ -36,10 +36,10 @@ Manifest 不保存原始 `text/audit_text`。`leakage_check=PASS` 要求所有�
 
 - `locator`、`sequence_index`、`content_sha256`；
 - `available_at_decision=true`；
-- 至少一个 `supports_needs` 或 `supports_primitives` 绑定；
+- 至少一个 `supports_dimensions` 或 `supports_primitives` 绑定；
 - `source ∈ {OBSERVED, INFERRED, DESIGN_ASSUMPTION}`。
 
-若设置 `supports_primitives`，证据只支持这些原语；否则按 `supports_needs` 支持以该 need 为 primary need 的候选。硬约束、E 分数和 Decision Brief 均只使用当前候选的支持证据。若 state 的全局完整度为 sufficient，但只有部分经验性证据与该候选绑定，候选级完整度保守降为 partial，避免继承其他候选的证据强度。
+若设置 `supports_primitives`，证据只支持这些原语；否则按 `supports_dimensions` 支持以该维度为 primary support dimension 的候选。硬约束、证据质量分数和 Decision Brief 均只使用当前候选的支持证据。若 state 的全局完整度为 sufficient，但只有部分经验性证据与该候选绑定，候选级完整度保守降为 partial，避免继承其他候选的证据强度。
 
 Calibration ingestion 把独立的 `prefix_manifest.jsonl` 作为权威来源，不信任 review 文件自报的 stratum、participant group、泄漏状态或证据清单。加载时会重新验证事件 ID/locator/sequence 唯一性、连续顺序、onset 与最后事件一致、`available_at_decision=true`、数量和哈希格式。随后把人工 state 中每条证据的 ID、locator、sequence index 与内容哈希和权威 manifest 逐项核对，防止替换引用或借用 post-onset 证据。
 
@@ -60,7 +60,7 @@ Calibration ingestion 把独立的 `prefix_manifest.jsonl` 作为权威来源，
 
 当前离线搜索对象为：
 
-- 五个正权重 `O/S/D/E/W`，总和为 1；
+- 五个正权重（三个支持维度、证据质量、工作流连续性），总和为 1；
 - `gain` 阈值；
 - `near_tie` 阈值。
 

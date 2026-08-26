@@ -1,0 +1,26 @@
+{
+  "schema_version": "retrace-runtime-request-v0.6",
+  "request_id": "REQ-example-001",
+  "session_id": "SESSION-example",
+  "state": {
+    "decision_id": "example-live-state",
+    "process_state": "REENTRY_OCCASION_OBSERVED",
+    "support_needs": {
+      "criteria_basis_reconstruction": 3,
+      "project_state_reconstruction": 2,
+      "evidence_action_governance": 1
+    },
+    "risk_level": "LOW",
+    "authorization_required": false,
+    "evidence_level": 0.5,
+    "confidence": 0.9,
+    "recent_intervention_count": 0,
+    "active_verification": false,
+    "evidence_refs": [
+      {
+        "evidence_id": "example-live-state:E1",
+        "source": "OBSERVED"
+      }
+    ]
+  }
+}

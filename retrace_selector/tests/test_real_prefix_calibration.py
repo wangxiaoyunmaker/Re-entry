@@ -53,14 +53,14 @@ def write_transcript(path: Path, events: list[dict]) -> None:
     )
 
 
-def evidence(evidence_id: str, need: str):
+def evidence(evidence_id: str, dimension: str):
     return {
         "evidence_id": evidence_id,
         "source": "OBSERVED",
         "locator": f"case/transcript.jsonl#{evidence_id}",
         "sequence_index": 0,
         "content_sha256": hashlib.sha256(evidence_id.encode()).hexdigest(),
-        "supports_needs": [need],
+        "supports_dimensions": [dimension],
         "available_at_decision": True,
     }
 
@@ -70,7 +70,9 @@ def reviewed_case(case_id: str, group: str, needs: dict, expected: str, primitiv
     if any(needs.values()):
         need = max(needs, key=needs.get)
         item_evidence = [evidence(f"{case_id}:E1", need)]
-    prefix_source = item_evidence[0] if item_evidence else evidence(f"{case_id}:P0", "O")
+    prefix_source = item_evidence[0] if item_evidence else evidence(
+        f"{case_id}:P0", "criteria_basis_reconstruction"
+    )
     prefix_reference = {
         "evidence_id": prefix_source["evidence_id"],
         "locator": prefix_source["locator"],
@@ -109,7 +111,8 @@ def reviewed_case(case_id: str, group: str, needs: dict, expected: str, primitiv
                 "schema_version": "retrace-state-v2",
                 "decision_id": case_id,
                 "process_state": "REENTRY_OCCASION_OBSERVED",
-                "governance_needs": needs,
+                "support_opportunity": "REENTRY_SUPPORT",
+                "support_needs": needs,
                 "evidence": item_evidence,
                 "consequence": "medium",
                 "reversibility": "medium",
@@ -138,9 +141,9 @@ def write_targets(directory: Path, cases: list[dict]) -> Path:
     records = [
         calibration_target(
             case["case_id"],
-            "NO_INTERVENTION" if not any(case["review"]["state"]["governance_needs"].values()) else "INTERVENE",
-            [] if not any(case["review"]["state"]["governance_needs"].values()) else [
-                "RULE_ALIGNMENT" if case["review"]["state"]["governance_needs"]["O"] else "VERIFICATION"
+            "NO_INTERVENTION" if not any(case["review"]["state"]["support_needs"].values()) else "INTERVENE",
+            [] if not any(case["review"]["state"]["support_needs"].values()) else [
+                "RULE_ALIGNMENT" if case["review"]["state"]["support_needs"]["criteria_basis_reconstruction"] else "VERIFICATION"
             ],
         )
         for case in cases
@@ -331,7 +334,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_refuses_pending_reviews(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         case["review"]["status"] = "PENDING"
         with tempfile.TemporaryDirectory() as directory:
@@ -345,7 +348,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_rejects_evidence_that_does_not_match_prefix(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         case["review"]["state"]["evidence"][0]["content_sha256"] = "f" * 64
         with tempfile.TemporaryDirectory() as directory:
@@ -359,7 +362,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_rejects_tampered_review_prefix(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -380,7 +383,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_revalidates_manifest_temporal_invariants(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -402,7 +405,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_rejects_approval_without_reviewer_metadata(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         case["review"]["reviewer"] = None
         with tempfile.TemporaryDirectory() as directory:
@@ -421,7 +424,7 @@ class CalibrationTests(unittest.TestCase):
 
     def test_calibration_rejects_one_group_configuration(self):
         case = reviewed_case(
-            "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+            "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -441,13 +444,13 @@ class CalibrationTests(unittest.TestCase):
     def test_calibration_runs_grouped_cross_validation_on_approved_prefixes(self):
         cases = [
             reviewed_case(
-                "C1", "g1", {"O": 3, "S": 0, "D": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
+                "C1", "g1", {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "INTERVENE", ["RULE_ALIGNMENT"]
             ),
             reviewed_case(
-                "C2", "g2", {"O": 0, "S": 0, "D": 3}, "INTERVENE", ["VERIFICATION", "DISPOSITION_COORDINATION"]
+                "C2", "g2", {"criteria_basis_reconstruction": 0, "project_state_reconstruction": 0, "evidence_action_governance": 3}, "INTERVENE", ["VERIFICATION", "DISPOSITION_COORDINATION"]
             ),
             reviewed_case(
-                "C3", "g3", {"O": 0, "S": 0, "D": 0}, "NO_INTERVENTION", []
+                "C3", "g3", {"criteria_basis_reconstruction": 0, "project_state_reconstruction": 0, "evidence_action_governance": 0}, "NO_INTERVENTION", []
             ),
         ]
         with tempfile.TemporaryDirectory() as directory:

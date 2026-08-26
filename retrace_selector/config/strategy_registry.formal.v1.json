@@ -1,0 +1,124 @@
+{
+  "registry_version": "STRATEGY-REGISTRY-V1-FORMAL",
+  "registry_status": "APPROVED",
+  "candidates": [
+    {
+      "strategy_id": "STATE_CONTEXT_RECOVERY",
+      "strategy_family": "STATE_CONTEXT_RECOVERY",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.20, "state": 0.45, "action": 0.10, "evidence": 0.72, "workflow": 0.92},
+      "template_id": "PROJECT_STATUS_BRIEF_V1"
+    },
+    {
+      "strategy_id": "STATE_CONTEXT_RECOVERY",
+      "strategy_family": "STATE_CONTEXT_RECOVERY",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.30, "state": 0.70, "action": 0.15, "evidence": 0.84, "workflow": 0.82},
+      "template_id": "PROJECT_STATUS_BRIEF_V1"
+    },
+    {
+      "strategy_id": "STATE_CONTEXT_RECOVERY",
+      "strategy_family": "STATE_CONTEXT_RECOVERY",
+      "intensity": "L3",
+      "parameters": {"criteria": 0.40, "state": 0.88, "action": 0.20, "evidence": 0.92, "workflow": 0.68},
+      "template_id": "PROJECT_STATUS_BRIEF_V1"
+    },
+    {
+      "strategy_id": "RULE_CLARIFICATION",
+      "strategy_family": "RULE_CLARIFICATION",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.45, "state": 0.10, "action": 0.20, "evidence": 0.72, "workflow": 0.92},
+      "template_id": "RULE_CLARIFIER_V1"
+    },
+    {
+      "strategy_id": "RULE_CLARIFICATION",
+      "strategy_family": "RULE_CLARIFICATION",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.68, "state": 0.16, "action": 0.34, "evidence": 0.84, "workflow": 0.82},
+      "template_id": "RULE_CLARIFIER_V1"
+    },
+    {
+      "strategy_id": "RULE_CLARIFICATION",
+      "strategy_family": "RULE_CLARIFICATION",
+      "intensity": "L3",
+      "parameters": {"criteria": 0.86, "state": 0.24, "action": 0.48, "evidence": 0.92, "workflow": 0.68},
+      "template_id": "RULE_CLARIFIER_V1"
+    },
+    {
+      "strategy_id": "CLAIM_EVIDENCE_CALIBRATION",
+      "strategy_family": "CLAIM_EVIDENCE_CALIBRATION",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.12, "state": 0.38, "action": 0.10, "evidence": 0.82, "workflow": 0.92},
+      "template_id": "DECLARATION_EVIDENCE_MATRIX_V1"
+    },
+    {
+      "strategy_id": "CLAIM_EVIDENCE_CALIBRATION",
+      "strategy_family": "CLAIM_EVIDENCE_CALIBRATION",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.20, "state": 0.68, "action": 0.18, "evidence": 0.92, "workflow": 0.82},
+      "template_id": "DECLARATION_EVIDENCE_MATRIX_V1"
+    },
+    {
+      "strategy_id": "CLAIM_EVIDENCE_CALIBRATION",
+      "strategy_family": "CLAIM_EVIDENCE_CALIBRATION",
+      "intensity": "L3",
+      "parameters": {"criteria": 0.28, "state": 0.86, "action": 0.25, "evidence": 0.97, "workflow": 0.68},
+      "template_id": "DECLARATION_EVIDENCE_MATRIX_V1"
+    },
+    {
+      "strategy_id": "GOVERNANCE_ACTION_PLANNING",
+      "strategy_family": "GOVERNANCE_ACTION_PLANNING",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.25, "state": 0.12, "action": 0.38, "evidence": 0.76, "workflow": 0.92},
+      "template_id": "NEXT_STEP_GOVERNANCE_CENTER_V1"
+    },
+    {
+      "strategy_id": "GOVERNANCE_ACTION_PLANNING",
+      "strategy_family": "GOVERNANCE_ACTION_PLANNING",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.45, "state": 0.18, "action": 0.70, "evidence": 0.88, "workflow": 0.82},
+      "template_id": "NEXT_STEP_GOVERNANCE_CENTER_V1"
+    },
+    {
+      "strategy_id": "GOVERNANCE_ACTION_PLANNING",
+      "strategy_family": "GOVERNANCE_ACTION_PLANNING",
+      "intensity": "L3",
+      "parameters": {"criteria": 0.65, "state": 0.28, "action": 0.90, "evidence": 0.95, "workflow": 0.68},
+      "template_id": "NEXT_STEP_GOVERNANCE_CENTER_V1"
+    }
+  ],
+  "templates": {
+  "PROJECT_STATUS_BRIEF_V1": {
+      "title": "项目状态简报",
+      "message": "先恢复当前任务、最近关键动作、影响范围和异常信号。",
+    "next_step": "生成状态确认 Prompt、仅查看变化或回到先前对话。",
+    "choice_condition_code": "STATE_FIRST",
+    "choice_condition": "优先恢复当前状态、最近动作和影响范围",
+      "allowed_action_codes": ["GENERATE_CONFIRMATION_PROMPT", "VIEW_CHANGES_ONLY", "RETURN_TO_PRIOR_CHAT"]
+    },
+  "RULE_CLARIFIER_V1": {
+      "title": "规则澄清器",
+      "message": "把不满意语句转成可编辑的规则、保护项和验收标准。",
+    "next_step": "转成规则、加入保护项、加入验收标准或编辑规则。",
+    "choice_condition_code": "RULE_FIRST",
+    "choice_condition": "优先把模糊要求转成规则、保护项和验收条件",
+      "allowed_action_codes": ["CONVERT_TO_RULE", "ADD_PROTECTED_ITEM", "ADD_ACCEPTANCE_CRITERIA", "EDIT_RULE"]
+    },
+  "DECLARATION_EVIDENCE_MATRIX_V1": {
+      "title": "声明—证据矩阵",
+      "message": "拆分 Agent 声明、已有证据、已证明内容、未证明内容和待验证项。",
+    "next_step": "要求运行/测试、列出影响范围、补充证据或标记已验证。",
+    "choice_condition_code": "EVIDENCE_FIRST",
+    "choice_condition": "优先拆分 Agent 声明、已有证据和待验证项",
+      "allowed_action_codes": ["REQUEST_RUN_OR_TEST", "LIST_MODIFIED_FILES", "LIST_IMPACT_SCOPE", "REQUEST_MISSING_EVIDENCE", "MARK_VERIFIED"]
+    },
+  "NEXT_STEP_GOVERNANCE_CENTER_V1": {
+      "title": "下一步治理中心",
+      "message": "明确下一步行动、允许继续的范围、责任、回退条件和停止条件。",
+    "next_step": "暂停并解释、只补证据、允许窄范围继续、回到上一步或生成治理 Prompt。",
+    "choice_condition_code": "GOVERNANCE_FIRST",
+    "choice_condition": "优先决定下一步、允许范围、回退和停止条件",
+      "allowed_action_codes": ["PAUSE_AND_EXPLAIN", "EVIDENCE_ONLY", "ALLOW_NARROW_CONTINUATION", "RETURN_TO_PRIOR_STEP", "GENERATE_GOVERNANCE_PROMPT"]
+    }
+  }
+}

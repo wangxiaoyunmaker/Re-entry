@@ -1,6 +1,6 @@
 # Evidence binding
 
-Use `supports_primitives` when the evidence supports a specific intervention primitive. Use `supports_needs` only when the evidence supports the corresponding primary governance need but not one particular primitive.
+Use `supports_primitives` when the evidence supports a specific intervention primitive. Use `supports_dimensions` only when the evidence supports the corresponding primary support dimension but not one particular primitive.
 
 Specific primitive binding takes priority over need binding. A candidate may use only evidence that supports its primitive or its primary need. Do not use an unrelated observed event to satisfy a candidate's evidence threshold.
 

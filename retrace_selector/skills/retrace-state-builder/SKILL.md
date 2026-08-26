@@ -12,7 +12,7 @@ Use this skill only when the host Agent has a bounded current context and a plau
 1. Read the supplied context boundary. Treat only events at or before `boundary.sequence_index` as available.
 2. If the host cannot establish a reliable boundary, return a clarification request and do not guess.
 3. Distinguish observed evidence from inferred interpretation and design assumptions.
-4. Code the current process state and `O/S/D` governance needs using the definitions in [references/process-state-rules.md](references/process-state-rules.md).
+4. Code the current process state, support opportunity, and full support-dimension needs using the definitions in [references/process-state-rules.md](references/process-state-rules.md).
 5. Bind each evidence item to the need or primitive it actually supports. Use the evidence rules in [references/evidence-binding.md](references/evidence-binding.md).
 6. Set confidence and evidence completeness conservatively. Later success, repair, acceptance, or user action must not be used to justify the current state.
 7. Emit only the `retrace-state-v2` object described in [references/state-schema-v2.md](references/state-schema-v2.md). Validate it before returning.

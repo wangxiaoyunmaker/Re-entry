@@ -17,9 +17,30 @@ class DecisionStateTests(unittest.TestCase):
         raw = state_dict()
         self.assertEqual(DecisionState.from_dict(raw).to_dict(), raw)
 
-    def test_governance_needs_reject_out_of_range_and_bool(self):
+    def test_runtime_signals_and_process_memory_round_trip(self):
+        raw = state_dict(
+            basis_relevant_signal=True,
+            delegation_failure_signal=True,
+            repeated_unresolved=True,
+            target_key="photo-upload",
+            delegation_attempt_count=3,
+            last_confirmed_progress=False,
+            failure_window=2,
+            cooldown_until="2026-08-23T12:00:00Z",
+            recent_intervention_ids=["VERIFICATION-L1"],
+        )
+        parsed = DecisionState.from_dict(raw)
+        self.assertEqual(parsed.to_dict(), raw)
+
+    def test_process_memory_rejects_duplicate_intervention_ids(self):
+        with self.assertRaisesRegex(ValidationError, "unique"):
+            DecisionState.from_dict(
+                state_dict(recent_intervention_ids=["VERIFICATION-L1", "VERIFICATION-L1"])
+            )
+
+    def test_support_needs_reject_out_of_range_and_bool(self):
         for value in (-1, 4, 1.5, "2", True):
-            raw = state_dict(governance_needs={"O": value, "S": 0, "D": 0})
+            raw = state_dict(support_needs={"criteria_basis_reconstruction": value, "project_state_reconstruction": 0, "evidence_action_governance": 0})
             with self.subTest(value=value), self.assertRaises(ValidationError):
                 DecisionState.from_dict(raw)
 
@@ -65,10 +86,14 @@ class ConfigTests(unittest.TestCase):
     def test_frozen_policy_and_templates_load(self):
         policy = load_policy(POLICY_PATH)
         templates = load_templates(TEMPLATES_PATH)
-        self.assertEqual(policy.policy_version, "skyline-mvp-v0.2")
+        self.assertEqual(
+            policy.policy_version,
+            "skyline-evidence-conditioned-v0.3.4-support-profile-weighted",
+        )
         self.assertEqual(len(policy.primitive_profiles), 5)
         self.assertEqual(len(policy.config_hash), 64)
         self.assertEqual(len(templates.config_hash), 64)
+        self.assertEqual(policy.objective["max_gap_penalty"], 0.5)
 
     def test_config_hashes_are_deterministic(self):
         first_policy = load_policy(POLICY_PATH)
@@ -82,7 +107,7 @@ class ConfigTests(unittest.TestCase):
         policy = load_policy(POLICY_PATH)
         templates = load_templates(TEMPLATES_PATH)
         with self.assertRaises(TypeError):
-            policy.weights["O"] = 1.0
+            policy.weights["criteria_basis_reconstruction"] = 1.0
         with self.assertRaises(TypeError):
             policy.primitive_profiles[Primitive.CAUSAL_EXPLANATION].minimum_evidence[
                 Level.L3
@@ -92,7 +117,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_invalid_weight_sum_fails_closed(self):
         raw = load_json(POLICY_PATH)
-        raw["weights"]["W"] = 0.99
+        raw["weights"]["workflow_continuity"] = 0.99
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "bad.json"
             path.write_text(json.dumps(raw), encoding="utf-8")

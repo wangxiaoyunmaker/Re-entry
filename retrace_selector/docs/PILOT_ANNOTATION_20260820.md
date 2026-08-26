@@ -4,7 +4,7 @@
 
 ## Pilot states
 
-| Episode | Prefix-side interpretation | Needs (O/S/D) | Evidence completeness | Selector result |
+| Episode | Prefix-side interpretation | Support needs | Evidence completeness | Selector result |
 |---|---|---:|---|---|
 | SRE-0012 | 用户要求对已修复的网站进行真实网页验证；此前已经历多次干预 | 1/2/3 | partial | `NO_INTERVENTION`（cooldown） |
 | SRE-0017 | 用户重新规定交付内容与范围，要求实现回到明确规则 | 3/2/1 | partial | `RULE_ALIGNMENT-L2` |
@@ -17,7 +17,7 @@
 
 使用 4 个 pilot review、3 个参与者组和现有隔离 target ledger 运行校准：
 
-- 推荐权重：`O=0.2, S=0.3, D=0.2, E=0.1, W=0.2`；
+- 推荐权重：三个支持维度、证据质量和工作流连续性分别为 `0.2, 0.3, 0.2, 0.1, 0.2`；
 - `gain=0.025`，`near_tie=0.03`；
 - 训练集匹配率：`1.00`；
 - 分组交叉验证准确率：`0.75`；

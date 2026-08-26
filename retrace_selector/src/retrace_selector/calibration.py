@@ -408,7 +408,16 @@ def _weight_grid(step: float) -> Iterable[dict[str, float]]:
         values = [positions[index + 1] - positions[index] for index in range(5)]
         yield {
             key: round(value * step, 10)
-            for key, value in zip(("O", "S", "D", "E", "W"), values)
+            for key, value in zip(
+                (
+                    "criteria_basis_reconstruction",
+                    "project_state_reconstruction",
+                    "evidence_action_governance",
+                    "evidence_quality",
+                    "workflow_continuity",
+                ),
+                values,
+            )
         }
 
 

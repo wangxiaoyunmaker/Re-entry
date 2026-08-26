@@ -6,7 +6,9 @@
 episode inventory → onset resolver → prefix manifest → human prefix review ┐
                                                                            ├→ strict state loader
 policy JSON ────────────────────────────────────────────────────────────────┘
-          → candidate generator → constraint engine → scorer → skyline
+          → first-stage observer → support-profile analysis
+          → candidate generator → hard constraints → scorer → one skyline
+          → reference-point objective J(c) → baseline gate
           → selector → frozen renderer → audit
 ```
 
@@ -18,14 +20,15 @@ policy JSON ──────────────────────�
 |---|---|
 | `models.py` | 枚举、状态、候选、分数和结果类型 |
 | `real_prefix.py` | 解析真实 transcript、冻结 onset prefix、生成无正文证据清单和泄漏报告 |
-| `evidence.py` | 将证据按 need/primitive 绑定到候选并计算候选级证据完整度 |
+| `evidence.py` | 将证据按 support dimension/primitive 绑定到候选并计算候选级证据完整度 |
 | `calibration.py` | 隔离完整 episode 标签、校验人工批准状态、搜索参数并按参与者分组交叉验证 |
 | `config.py` | 严格加载 policy/templates，计算 SHA-256 |
 | `candidates.py` | 生成 canonical 单原语候选和 B0 |
 | `constraints.py` | 逐候选硬约束与全局冲突检查 |
-| `scoring.py` | O/S/D/E/W 和冻结效用 |
+| `scoring.py` | 生成五维候选分数；不负责最终选择目标 |
+| `objective.py` | 根据状态目标点计算 `J(c)` 与相对 B0 的目标缺口改善 |
 | `skyline.py` | epsilon dominance、前沿与支配证据 |
-| `selector.py` | 端到端编排、gain、tie 和 outcome |
+| `selector.py` | 端到端编排、一次 Skyline、`J(c)`、baseline gate、tie 和 outcome |
 | `rendering.py` | 冻结模板渲染 |
 | `audit.py` | canonical JSON、JSONL 和幂等审计 ID |
 | `replay.py` | 批量运行与汇总指标 |
@@ -45,6 +48,7 @@ generate_candidates(state, policy)
 evaluate_constraints(brief, state, policy)
 score_brief(brief, state, policy)
 compute_skyline(scored, epsilon)
+objective_value(score, state, policy)  # J(c), lower is better
 ```
 
 ## 4. Decision rules
@@ -55,13 +59,13 @@ compute_skyline(scored, epsilon)
 
 ### 4.2 Candidate constraints
 
-`NO_INTERVENTION` 是普通候选和 gain 基线；高风险时可以被约束删除。即使被删除，其基线分数仍用于诊断 gain。`SAFE_HOLD` 不参与候选比较。
+`NO_INTERVENTION` 是普通候选和目标缺口改善基线；高风险时可以被约束删除。即使被删除，其基线 `J(B0)` 仍用于诊断目标缺口改善。`SAFE_HOLD` 不参与候选比较。
 
 `DESIGN_ASSUMPTION` 只标识设计依据，不能单独支撑 partial/sufficient 的项目证据完整度。`CAUSAL_EXPLANATION-L2/L3` 还必须有至少一条与该候选绑定的 `OBSERVED` 证据。候选级绑定优先于宽泛的 need 绑定；一个候选不能借用只支持其他 need/primitive 的证据。
 
-### 4.3 Scoring
+### 4.3 Scoring and objective
 
-对 `k∈{O,S,D}`：
+对三个支持维度：
 
 ```text
 score_k = intrinsic_capability_k
@@ -69,11 +73,23 @@ score_k = intrinsic_capability_k
           × normalized_need_k
 ```
 
-`minimum_evidence` 是硬约束门槛；`E` 根据该候选所绑定证据计算，不会因候选无最低证据要求而自动置 1。`W=1-burden-cooldown_penalty`。
+`minimum_evidence` 是硬约束门槛；`evidence_quality` 根据该候选所绑定证据计算，不会因候选无最低证据要求而自动置 1。`workflow_continuity=1-burden-cooldown_penalty`。
+
+候选通过硬约束后只计算一次 Skyline。对 Skyline 前沿中的每个候选构造状态相关的目标点 `r`，并计算：
+
+```text
+gap_j(c) = max(0, r_j - x_j(c))
+J(c) = Σ_j w_j × gap_j(c) + λ × max_j gap_j(c)
+improvement(c) = J(B0) - J(c)
+```
+
+其中 `x(c)` 是五维候选分数，`w` 是冻结的客观因子权重，`λ` 惩罚最大单维缺口，目标是让 `J(c)` 越小越好。普通 Re-entry 使用 `improvement` 门槛；`EARLY_SUPPORT` 使用独立的低负担门槛。`utility` 不再是选择目标，也不参与排序。
 
 ### 4.4 Skyline and ranking
 
-所有维度越大越好。Dominance 使用统一 epsilon。权重只用于 Skyline 内排序。强制治理场景绕过普通 gain gate，但仍记录相对 B0 gain。
+所有维度越大越好。Dominance 使用统一 epsilon。Skyline 只删除被支配候选；最终排序由 `J(c)` 完成，而不是再次调用 Skyline。强制治理场景绕过普通 improvement gate，但仍记录相对 B0 的目标缺口改善。
+
+运行时观察器与选择器分开：`basis_relevant_signal` 只负责启动第二阶段分析，不直接生成干预；`delegation_failure_signal`、`repeated_unresolved` 和过程记忆字段独立保存在状态中。`target_key` 用于识别同一目标，失败计数/窗口用于判断重复未解决，`cooldown_until` 和 `recent_intervention_ids` 用于抑制重复打扰。
 
 ## 5. Determinism and audit
 

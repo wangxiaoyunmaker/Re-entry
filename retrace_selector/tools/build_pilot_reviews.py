@@ -6,7 +6,7 @@ from pathlib import Path
 
 PILOT_CASES = {
     "SRE-0012": {
-        "needs": {"O": 1, "S": 2, "D": 3},
+        "needs": {"criteria_basis_reconstruction": 1, "project_state_reconstruction": 2, "evidence_action_governance": 3},
         "consequence": "medium",
         "reversibility": "medium",
         "authorization_risk": "low",
@@ -18,7 +18,7 @@ PILOT_CASES = {
         "note": "Prefix shows a user request for real-page validation after prior repair attempts; it does not establish that the repair is actually verified.",
     },
     "SRE-0017": {
-        "needs": {"O": 3, "S": 2, "D": 1},
+        "needs": {"criteria_basis_reconstruction": 3, "project_state_reconstruction": 2, "evidence_action_governance": 1},
         "consequence": "low",
         "reversibility": "high",
         "authorization_risk": "low",
@@ -30,7 +30,7 @@ PILOT_CASES = {
         "note": "Prefix contains a direct user correction of scope/content alignment; the state records the rule being reasserted, not later repair behavior.",
     },
     "SRE-0061": {
-        "needs": {"O": 2, "S": 3, "D": 3},
+        "needs": {"criteria_basis_reconstruction": 2, "project_state_reconstruction": 3, "evidence_action_governance": 3},
         "consequence": "medium",
         "reversibility": "medium",
         "authorization_risk": "low",
@@ -42,7 +42,7 @@ PILOT_CASES = {
         "note": "Prefix contains the user's domain-level connection requirements between SPS work data and gamified rewards; implementation adequacy is not inferred from later turns.",
     },
     "SRE-0112": {
-        "needs": {"O": 2, "S": 3, "D": 2},
+        "needs": {"criteria_basis_reconstruction": 2, "project_state_reconstruction": 3, "evidence_action_governance": 2},
         "consequence": "medium",
         "reversibility": "medium",
         "authorization_risk": "low",
@@ -94,7 +94,8 @@ def main() -> None:
             "schema_version": "retrace-state-v2",
             "decision_id": case_id,
             "process_state": "REENTRY_OCCASION_OBSERVED",
-            "governance_needs": spec["needs"],
+            "support_opportunity": "REENTRY_SUPPORT",
+            "support_needs": spec["needs"],
             "evidence": [evidence],
             "consequence": spec["consequence"],
             "reversibility": spec["reversibility"],

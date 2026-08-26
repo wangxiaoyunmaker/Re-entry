@@ -15,7 +15,8 @@
 输入必须包含：
 
 - `process_state`
-- `governance_needs.O/S/D`，整数 `0–3`
+- `support_opportunity`：`NONE`、`EARLY_SUPPORT`、`REENTRY_SUPPORT` 或 `ABSTAIN`
+- `support_needs` 下三个完整支持维度的整数等级 `0–3`
 - 带来源的 evidence references
 - `consequence`
 - `reversibility`
@@ -24,12 +25,17 @@
 - `state_confidence`，范围 `[0,1]`
 - `recent_interventions`
 - `active_verification`
+- independent runtime signals when available: `basis_relevant_signal`,
+  `delegation_failure_signal`, `repeated_unresolved`
+- optional process memory: `target_key`, `delegation_attempt_count`,
+  `last_confirmed_progress`, `failure_window`, `cooldown_until`,
+  `recent_intervention_ids`
 
 未知字段、缺失字段和非法枚举必须产生结构化错误。
 
 ### FR-2 Versioned frozen policy
 
-五个原语、三个强度、能力、负担、证据门槛、权重、阈值和规则全部来自版本化 JSON 配置。配置加载失败时 fail closed。
+五个原语、三个强度、能力、负担、证据门槛、权重、目标缺口改善门槛和规则全部来自版本化 JSON 配置。配置加载失败时 fail closed。
 
 ### FR-3 Candidate generation
 
@@ -37,19 +43,19 @@ MVP 生成五个单原语的 L1–L3 候选和 `NO_INTERVENTION`。过程状态�
 
 ### FR-4 Constraint engine
 
-每条约束具有唯一 ID、优先级和可审计原因。安全/不可逆 > 授权 > 证据 > 状态置信度 > 过程状态 > 重复和负担。约束不允许被高效用抵消。
+每条约束具有唯一 ID、优先级和可审计原因。安全/不可逆 > 授权 > 证据 > 状态置信度 > 过程状态 > 重复和负担。约束不允许被目标函数抵消。
 
 ### FR-5 Multi-criteria scoring
 
-对可行候选计算 `O/S/D/E/W`。所有分数有限且位于 `[0,1]`。`NO_INTERVENTION` 的基线为 `[0,0,0,1,1]`。
+对可行候选计算三个支持维度、`evidence_quality` 和 `workflow_continuity`。所有分数有限且位于 `[0,1]`。`NO_INTERVENTION` 的基线为三个支持维度为 `0`、证据质量和工作流连续性为 `1`。
 
 ### FR-6 Skyline and selection
 
-系统必须计算 dominance、Skyline、`FrontierRatio`、冻结策略效用、相对不干预增益和 near-tie。`SAFE_HOLD` 与 `REQUEST_CLARIFICATION` 是终止结果，不参加 Skyline。
+系统必须计算 dominance、一次 Skyline、`FrontierRatio`、参考点目标函数 `J(c)`、相对不干预的目标缺口改善和 near-tie。`SAFE_HOLD` 与 `REQUEST_CLARIFICATION` 是终止结果，不参加 Skyline。`utility` 不属于最终选择输入。
 
 ### FR-7 Auditable output
 
-输出必须包含输入证据、配置版本与哈希、生成和删除的候选、约束结果、分数、dominance、Skyline、排序、增益、最终选择和原因。
+输出必须包含输入证据、配置版本与哈希、生成和删除的候选、约束结果、分数、dominance、Skyline、`J(c)`、目标缺口改善、最终选择和原因。
 
 ### FR-8 Frozen rendering
 
@@ -63,15 +69,15 @@ CLI 支持单状态选择和批量 canonical scenario replay。历史 episode re
 
 | Outcome | Meaning |
 |---|---|
-| `INTERVENE` | 选择越过增益门槛的候选；或在 B0 因安全/授权约束不可行时，选择效用最高的安全候选并标记 forced governance |
-| `NO_INTERVENTION` | 干预增益不足或直接委托仍有效 |
+| `INTERVENE` | 选择 `J(c)` 相对 B0 改善并越过门槛的候选；或在 B0 因安全/授权约束不可行时，选择最小 `J(c)` 的安全候选并标记 forced governance |
+| `NO_INTERVENTION` | 目标缺口改善不足或直接委托仍有效 |
 | `PRESENT_CHOICES` | 两个实质不同候选近似并列 |
 | `REQUEST_CLARIFICATION` | 高风险状态与低置信度冲突 |
 | `SAFE_HOLD` | 硬约束后没有安全可行候选 |
 
 ## 5. Non-goals
 
-- 从原始对话自动识别 Occasion 或 O/S/D；
+- 从原始对话自动识别 Occasion 或支持需求；
 - 建立 Occasion 穷尽分类；
 - 训练权重、个性化或估计成功概率；
 - LLM 自由生成干预正文；
@@ -95,7 +101,7 @@ CLI 支持单状态选择和批量 canonical scenario replay。历史 episode re
 - `active_verification=true` 时不重复 Verification；
 - 空可行集返回 `SAFE_HOLD`；
 - 被支配候选不进入 Skyline，所有非支配候选均进入；
-- 增益未越过门槛时返回 `NO_INTERVENTION`；
+- 普通 Re-entry 候选未越过目标缺口改善门槛时返回 `NO_INTERVENTION`；`EARLY_SUPPORT` 使用独立的低负担改善门槛，但仍只允许 L1；
 - near-tie 触发冻结的选择规则；
 - 同一状态和 policy 产生确定性等价结果；
 - CLI select 与 replay 均有端到端测试。

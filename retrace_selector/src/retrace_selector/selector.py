@@ -16,10 +16,16 @@ from .models import (
     Primitive,
     Risk,
     SelectionResult,
+    SupportOpportunity,
+    SUPPORT_DIMENSIONS,
     TemplateCatalog,
 )
 from .rendering import render_brief
-from .scoring import NO_INTERVENTION_SCORE, score_brief, utility
+from .scoring import (
+    NO_INTERVENTION_SCORE,
+    score_brief,
+)
+from .objective import objective_improvement, objective_value, target_vector
 from .skyline import compute_skyline
 from .version import ENGINE_VERSION
 
@@ -36,10 +42,20 @@ def _audit_id(
     return hashlib.sha256(canonical_json(material).encode("utf-8")).hexdigest()
 
 
-def _rank_key(item: CandidateEvaluation) -> tuple[float, float, float, int, str]:
-    assert item.utility is not None and item.score is not None
+def _rank_key(
+    item: CandidateEvaluation,
+    state: DecisionState,
+    policy: PolicySpec,
+) -> tuple[float, float, float, int, str]:
+    assert item.objective_value is not None and item.score is not None
     level = int(item.brief.level) if item.brief.level is not None else 0
-    return (-item.utility, -item.score.E, -item.score.W, level, item.brief.brief_id)
+    return (
+        item.objective_value,
+        intervention_burden(item.brief, state, policy),
+        -item.score.evidence_quality,
+        level,
+        item.brief.brief_id,
+    )
 
 
 class SelectionEngine:
@@ -82,18 +98,35 @@ class SelectionEngine:
             "audit_record_ready": True,
             "forced_governance": forced_governance,
             "b0_forbidden": forced_governance,
+            "objective": {
+                "name": "reference_point_target_gap",
+                "target_vector": dict(target_vector(state, self.policy)),
+                "weights": dict(self.policy.weights),
+                "max_gap_penalty": self.policy.objective["max_gap_penalty"],
+            },
         }
 
     def select(self, state: DecisionState) -> SelectionResult:
         warnings: list[str] = []
-        needs = state.governance_needs
+        needs = state.support_needs
+        if state.support_opportunity is SupportOpportunity.ABSTAIN:
+            return self._terminal_result(
+                state,
+                Outcome.REQUEST_CLARIFICATION,
+                "T000_SUPPORT_OPPORTUNITY_ABSTAIN",
+                warnings=("support opportunity is uncertain; no automatic intervention was selected",),
+                forced_governance=False,
+            )
         if (
             state.process_state.value == "DELEGATION_PROGRESSING"
-            and any(getattr(needs, key) > 0 for key in ("O", "S", "D"))
+            and any(getattr(needs, key) > 0 for key in SUPPORT_DIMENSIONS)
         ):
-            warnings.append("W001_PROGRESSING_WITH_NONZERO_GOVERNANCE_NEEDS")
-        if state.authorization_risk is Risk.HIGH and needs.D == 0:
-            warnings.append("W002_HIGH_AUTHORIZATION_WITH_ZERO_D_NEED")
+            warnings.append("W001_PROGRESSING_WITH_NONZERO_SUPPORT_NEEDS")
+        if (
+            state.authorization_risk is Risk.HIGH
+            and needs.evidence_action_governance == 0
+        ):
+            warnings.append("W002_HIGH_AUTHORIZATION_WITHOUT_ACTION_SUPPORT")
 
         high_risk = state.authorization_risk is Risk.HIGH or (
             state.consequence is Risk.HIGH and state.reversibility is Risk.LOW
@@ -143,13 +176,22 @@ class SelectionEngine:
         frontier, witnesses = compute_skyline(
             feasible, self.policy.thresholds.dominance_epsilon
         )
-        baseline_utility = utility(NO_INTERVENTION_SCORE, self.policy)
+        baseline_objective, _, _ = objective_value(
+            NO_INTERVENTION_SCORE, state, self.policy
+        )
         for item in frontier:
             assert item.score is not None
-            item.utility = utility(item.score, self.policy)
-            item.gain_vs_no_intervention = item.utility - baseline_utility
+            value, _, _ = objective_value(item.score, state, self.policy)
+            item.objective_value = value
+            item.objective_improvement_vs_no_intervention = objective_improvement(
+                value,
+                baseline_objective,
+            )
 
-        ranked = sorted(frontier, key=_rank_key)
+        ranked = sorted(
+            frontier,
+            key=lambda item: _rank_key(item, state, self.policy),
+        )
         feasible_ids = tuple(sorted(item.brief.brief_id for item in feasible))
         skyline_ids = tuple(item.brief.brief_id for item in ranked)
         frontier_ratio = len(frontier) / len(feasible)
@@ -177,7 +219,7 @@ class SelectionEngine:
                     frontier_ratio,
                     warnings,
                     forced_governance,
-                    baseline_utility,
+                    baseline_objective,
                 )
             result = self._terminal_result(
                 state,
@@ -190,11 +232,14 @@ class SelectionEngine:
 
         eligible_interventions = interventions
         if not forced_governance:
+            minimum_gain = self.policy.thresholds.gain
+            if state.support_opportunity is SupportOpportunity.EARLY_SUPPORT:
+                minimum_gain = self.policy.thresholds.early_support_gain_floor
             eligible_interventions = [
                 item
                 for item in interventions
-                if item.gain_vs_no_intervention is not None
-                and item.gain_vs_no_intervention > self.policy.thresholds.gain
+                if item.objective_improvement_vs_no_intervention is not None
+                and item.objective_improvement_vs_no_intervention > minimum_gain
             ]
         if not eligible_interventions:
             return self._build_result(
@@ -209,7 +254,7 @@ class SelectionEngine:
                 frontier_ratio,
                 warnings,
                 forced_governance,
-                baseline_utility,
+                baseline_objective,
             )
 
         top = eligible_interventions[0]
@@ -220,12 +265,17 @@ class SelectionEngine:
         outcome = Outcome.INTERVENE
         if len(eligible_interventions) >= 2:
             second = eligible_interventions[1]
-            assert top.utility is not None and second.utility is not None
-            if top.utility - second.utility <= self.policy.thresholds.near_tie:
-                top_need = self.policy.primitive_profiles[top.brief.primitive].primary_need
+            assert top.objective_value is not None and second.objective_value is not None
+            if (
+                abs(top.objective_value - second.objective_value)
+                <= self.policy.thresholds.near_tie
+            ):
+                top_need = self.policy.primitive_profiles[
+                    top.brief.primitive
+                ].primary_support_dimension
                 second_need = self.policy.primitive_profiles[
                     second.brief.primitive
-                ].primary_need
+                ].primary_support_dimension
                 if top_need != second_need:
                     selected = [top, second]
                     outcome = Outcome.PRESENT_CHOICES
@@ -255,7 +305,7 @@ class SelectionEngine:
             frontier_ratio,
             warnings,
             forced_governance,
-            baseline_utility,
+            baseline_objective,
         )
 
     def _build_result(
@@ -271,14 +321,14 @@ class SelectionEngine:
         frontier_ratio: float,
         warnings: list[str],
         forced_governance: bool,
-        baseline_utility: float,
+        baseline_objective: float,
     ) -> SelectionResult:
         rendered = tuple(
             render_brief(item.brief, state, self.policy, self.templates)
             for item in selected
         )
         metadata = self._metadata(state, forced_governance)
-        metadata["baseline_utility"] = baseline_utility
+        metadata["baseline_objective"] = baseline_objective
         return SelectionResult(
             audit_id=_audit_id(state, self.policy, self.templates),
             outcome=outcome,

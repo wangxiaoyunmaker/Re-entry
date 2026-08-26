@@ -174,6 +174,18 @@ def evaluate_constraints(
         )
     )
 
+    repeated_id_allowed = brief.is_no_intervention or brief.brief_id not in (
+        state.recent_intervention_ids or ()
+    )
+    records.append(
+        _record(
+            "C085_DUPLICATE_INTERVENTION_SUPPRESSION",
+            repeated_id_allowed,
+            "do not present the same intervention again while it is in recent history",
+            85,
+        )
+    )
+
     burden_allowed = (
         intervention_burden(brief, state, policy) <= policy.thresholds.max_burden
     )

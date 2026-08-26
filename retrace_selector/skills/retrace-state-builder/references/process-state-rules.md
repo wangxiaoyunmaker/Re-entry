@@ -1,4 +1,4 @@
-# Process state and governance needs
+# Process state and support needs
 
 ## Process state
 
@@ -7,10 +7,10 @@
 - `REENTRY_OCCASION_OBSERVED`: the user has encountered a mismatch or uncertainty and direct delegation is insufficient.
 - `GOVERNANCE_RECOVERING`: the user is already rebuilding understanding or verification; avoid redundant high-intensity intervention.
 
-## Governance needs
+## Support dimensions
 
-- `O` — criteria operationalization: rules, boundaries, acceptance conditions, and what counts as correct;
-- `S` — project-state reconstruction: versions, changes, dependencies, causes, and impacts;
-- `D` — verification–disposition reconfiguration: evidence, responsibility, order, scope, approval, rollback, and stopping conditions.
+- `criteria_basis_reconstruction` — support for recovering rules, boundaries, acceptance conditions, and what counts as correct;
+- `project_state_reconstruction` — support for recovering versions, changes, dependencies, causes, and impacts;
+- `evidence_action_governance` — support for organizing evidence, responsibility, order, scope, approval, rollback, and stopping conditions.
 
-Needs are simultaneous ordinal judgments, not a fixed sequence. Set a need to zero when the bounded evidence does not support it. Record uncertainty through lower confidence rather than inventing precision.
+These are simultaneous ordinal support judgments, not a fixed sequence and not claims about hidden mental states. Set a dimension to zero when the bounded evidence does not support it. Record uncertainty through lower confidence rather than inventing precision.

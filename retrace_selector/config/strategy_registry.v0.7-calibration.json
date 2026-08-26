@@ -1,0 +1,197 @@
+{
+  "schema_version": "retrace-strategy-registry-v0.6",
+  "registry_version": "csa-data-anchored-calibration-v0.7.0",
+  "registry_status": "TEST_ONLY",
+  "capability_mode": "STATE_CONDITIONED",
+  "catalog": [
+    {
+      "strategy_id": "CAL_CRITERIA_ALIGNMENT",
+      "title": "判断标准对齐",
+      "authorization_capable": false,
+      "verification_support": false,
+      "deterministic_causal_claim": false
+    },
+    {
+      "strategy_id": "CAL_STATE_TRACE",
+      "title": "项目状态与来源重建",
+      "authorization_capable": false,
+      "verification_support": false,
+      "deterministic_causal_claim": false
+    },
+    {
+      "strategy_id": "CAL_CAUSAL_CHECK",
+      "title": "原因关系核对",
+      "authorization_capable": false,
+      "verification_support": false,
+      "deterministic_causal_claim": true
+    },
+    {
+      "strategy_id": "CAL_VERIFICATION",
+      "title": "验证设计",
+      "authorization_capable": false,
+      "verification_support": true,
+      "deterministic_causal_claim": false
+    },
+    {
+      "strategy_id": "CAL_DISPOSITION",
+      "title": "授权与处置边界",
+      "authorization_capable": true,
+      "verification_support": false,
+      "deterministic_causal_claim": false
+    }
+  ],
+  "candidates": [
+    {
+      "strategy_id": "CAL_CRITERIA_ALIGNMENT",
+      "capability": {"criteria": 0.35, "state": 0.05, "action": 0.10},
+      "evidence_quality": 0.25,
+      "workflow_cost": 0.10,
+      "intensity": "L1",
+      "minimum_evidence": "NONE",
+      "template_id": "CAL_CRITERIA_ALIGNMENT_L1"
+    },
+    {
+      "strategy_id": "CAL_CRITERIA_ALIGNMENT",
+      "capability": {"criteria": 0.65, "state": 0.05, "action": 0.20},
+      "evidence_quality": 0.50,
+      "workflow_cost": 0.25,
+      "intensity": "L2",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_CRITERIA_ALIGNMENT_L2"
+    },
+    {
+      "strategy_id": "CAL_CRITERIA_ALIGNMENT",
+      "capability": {"criteria": 0.85, "state": 0.10, "action": 0.30},
+      "evidence_quality": 0.70,
+      "workflow_cost": 0.45,
+      "intensity": "L3",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_CRITERIA_ALIGNMENT_L3"
+    },
+    {
+      "strategy_id": "CAL_STATE_TRACE",
+      "capability": {"criteria": 0.05, "state": 0.35, "action": 0.05},
+      "evidence_quality": 0.45,
+      "workflow_cost": 0.10,
+      "intensity": "L1",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_STATE_TRACE_L1"
+    },
+    {
+      "strategy_id": "CAL_STATE_TRACE",
+      "capability": {"criteria": 0.10, "state": 0.65, "action": 0.10},
+      "evidence_quality": 0.70,
+      "workflow_cost": 0.25,
+      "intensity": "L2",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_STATE_TRACE_L2"
+    },
+    {
+      "strategy_id": "CAL_STATE_TRACE",
+      "capability": {"criteria": 0.10, "state": 0.80, "action": 0.20},
+      "evidence_quality": 0.90,
+      "workflow_cost": 0.50,
+      "intensity": "L3",
+      "minimum_evidence": "SUFFICIENT",
+      "template_id": "CAL_STATE_TRACE_L3"
+    },
+    {
+      "strategy_id": "CAL_CAUSAL_CHECK",
+      "capability": {"criteria": 0.05, "state": 0.40, "action": 0.10},
+      "evidence_quality": 0.35,
+      "workflow_cost": 0.15,
+      "intensity": "L1",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_CAUSAL_CHECK_L1"
+    },
+    {
+      "strategy_id": "CAL_CAUSAL_CHECK",
+      "capability": {"criteria": 0.10, "state": 0.70, "action": 0.20},
+      "evidence_quality": 0.70,
+      "workflow_cost": 0.35,
+      "intensity": "L2",
+      "minimum_evidence": "SUFFICIENT",
+      "template_id": "CAL_CAUSAL_CHECK_L2"
+    },
+    {
+      "strategy_id": "CAL_CAUSAL_CHECK",
+      "capability": {"criteria": 0.10, "state": 0.85, "action": 0.25},
+      "evidence_quality": 0.90,
+      "workflow_cost": 0.60,
+      "intensity": "L3",
+      "minimum_evidence": "SUFFICIENT",
+      "template_id": "CAL_CAUSAL_CHECK_L3"
+    },
+    {
+      "strategy_id": "CAL_VERIFICATION",
+      "capability": {"criteria": 0.05, "state": 0.15, "action": 0.35},
+      "evidence_quality": 0.55,
+      "workflow_cost": 0.12,
+      "intensity": "L1",
+      "minimum_evidence": "NONE",
+      "template_id": "CAL_VERIFICATION_L1"
+    },
+    {
+      "strategy_id": "CAL_VERIFICATION",
+      "capability": {"criteria": 0.10, "state": 0.30, "action": 0.65},
+      "evidence_quality": 0.80,
+      "workflow_cost": 0.30,
+      "intensity": "L2",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_VERIFICATION_L2"
+    },
+    {
+      "strategy_id": "CAL_VERIFICATION",
+      "capability": {"criteria": 0.15, "state": 0.45, "action": 0.85},
+      "evidence_quality": 0.95,
+      "workflow_cost": 0.55,
+      "intensity": "L3",
+      "minimum_evidence": "SUFFICIENT",
+      "template_id": "CAL_VERIFICATION_L3"
+    },
+    {
+      "strategy_id": "CAL_DISPOSITION",
+      "capability": {"criteria": 0.10, "state": 0.05, "action": 0.35},
+      "evidence_quality": 0.25,
+      "workflow_cost": 0.12,
+      "intensity": "L1",
+      "minimum_evidence": "NONE",
+      "template_id": "CAL_DISPOSITION_L1"
+    },
+    {
+      "strategy_id": "CAL_DISPOSITION",
+      "capability": {"criteria": 0.20, "state": 0.10, "action": 0.65},
+      "evidence_quality": 0.50,
+      "workflow_cost": 0.30,
+      "intensity": "L2",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_DISPOSITION_L2"
+    },
+    {
+      "strategy_id": "CAL_DISPOSITION",
+      "capability": {"criteria": 0.30, "state": 0.15, "action": 0.85},
+      "evidence_quality": 0.70,
+      "workflow_cost": 0.50,
+      "intensity": "L3",
+      "minimum_evidence": "PARTIAL",
+      "template_id": "CAL_DISPOSITION_L3"
+    }
+  ],
+  "templates": [
+    {"template_id": "CAL_CRITERIA_ALIGNMENT_L1", "title": "补一条判断标准", "message": "当前决定还缺少一条可操作的规则或不可接受结果。", "next_step": "查看并确认一条局部标准。"},
+    {"template_id": "CAL_CRITERIA_ALIGNMENT_L2", "title": "对齐验收条件", "message": "继续修改前，先把目标转化为可检查的规则和范围。", "next_step": "确认、修改或拒绝建议的验收条件。"},
+    {"template_id": "CAL_CRITERIA_ALIGNMENT_L3", "title": "冻结关键规则", "message": "当前高后果决定依赖尚未确认的规则、优先级或边界情况。", "next_step": "冻结规则与冲突处理方式后再推进。"},
+    {"template_id": "CAL_STATE_TRACE_L1", "title": "展开相关来源", "message": "这里可能需要查看直接相关的文件、版本或修改来源。", "next_step": "展开与当前对象同链的来源。"},
+    {"template_id": "CAL_STATE_TRACE_L2", "title": "重建项目状态", "message": "建议先核对当前实现、历史修改和影响范围。", "next_step": "确认哪份状态应作为后续依据。"},
+    {"template_id": "CAL_STATE_TRACE_L3", "title": "等待状态确认", "message": "当前项目状态不足以支撑高后果操作。", "next_step": "确认权威版本和关键关系后再继续。"},
+    {"template_id": "CAL_CAUSAL_CHECK_L1", "title": "查看原因假设", "message": "当前现象可能需要连接到相关修改和未验证部分。", "next_step": "查看一个局部原因假设。"},
+    {"template_id": "CAL_CAUSAL_CHECK_L2", "title": "核对竞争性解释", "message": "建议比较当前原因判断与至少一个替代解释。", "next_step": "选择能区分两种解释的观察。"},
+    {"template_id": "CAL_CAUSAL_CHECK_L3", "title": "等待根因核验", "message": "当前高后果操作依赖尚未充分核验的原因关系。", "next_step": "完成 claim-matched 验证后再执行。"},
+    {"template_id": "CAL_VERIFICATION_L1", "title": "补一个验证入口", "message": "现有完成声明尚未覆盖用户真正关心的结果。", "next_step": "运行或查看一个目标相关验证。"},
+    {"template_id": "CAL_VERIFICATION_L2", "title": "先验证再推进", "message": "建议使用真实流程或目标相关证据核验当前状态。", "next_step": "确认验证对象、通过条件和责任。"},
+    {"template_id": "CAL_VERIFICATION_L3", "title": "等待关键验证", "message": "高后果操作缺少足以支持继续执行的验证。", "next_step": "完成关键验证并记录失败分支。"},
+    {"template_id": "CAL_DISPOSITION_L1", "title": "明确最小下一步", "message": "可以先说明由谁做什么，以及哪些部分暂不修改。", "next_step": "选择最小可逆行动。"},
+    {"template_id": "CAL_DISPOSITION_L2", "title": "协商处置边界", "message": "继续推进前，建议明确顺序、修改范围和回退条件。", "next_step": "确认或修改处置方案。"},
+    {"template_id": "CAL_DISPOSITION_L3", "title": "等待授权与回退", "message": "当前操作后果较高或授权范围不清。", "next_step": "确认允许范围、停止条件和回退路径。"}
+  ]
+}

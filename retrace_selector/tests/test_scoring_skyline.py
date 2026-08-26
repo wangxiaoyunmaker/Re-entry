@@ -11,7 +11,12 @@ from retrace_selector.models import (
     Primitive,
     ScoreVector,
 )
-from retrace_selector.scoring import NO_INTERVENTION_SCORE, score_brief
+from retrace_selector.scoring import (
+    NO_INTERVENTION_SCORE,
+    contextual_weights,
+    score_brief,
+)
+from retrace_selector.objective import objective_value, target_vector
 from retrace_selector.skyline import compute_skyline, dominates
 
 from common import engine, state
@@ -33,19 +38,19 @@ class ScoringTests(unittest.TestCase):
         brief = DecisionBrief.intervention(Primitive.RULE_ALIGNMENT, Level.L2)
         low = score_brief(
             brief,
-            state(governance_needs={"O": 1, "S": 0, "D": 0}),
+            state(support_needs={"criteria_basis_reconstruction": 1, "project_state_reconstruction": 0, "evidence_action_governance": 0}),
             self.engine.policy,
         )
         high = score_brief(
             brief,
-            state(governance_needs={"O": 3, "S": 0, "D": 0}),
+            state(support_needs={"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0}),
             self.engine.policy,
         )
-        self.assertGreater(high.O, low.O)
-        self.assertEqual(high.S, 0.0)
+        self.assertGreater(high.criteria_basis_reconstruction, low.criteria_basis_reconstruction)
+        self.assertEqual(high.project_state_reconstruction, 0.0)
 
     def test_all_generated_scores_are_unit_finite(self):
-        decision_state = state(governance_needs={"O": 3, "S": 3, "D": 3})
+        decision_state = state(support_needs={"criteria_basis_reconstruction": 3, "project_state_reconstruction": 3, "evidence_action_governance": 3})
         for primitive in Primitive:
             for level in Level:
                 score = score_brief(
@@ -64,7 +69,63 @@ class ScoringTests(unittest.TestCase):
             state(evidence=[], evidence_completeness="none"),
             self.engine.policy,
         )
-        self.assertEqual(score.E, 0.0)
+        self.assertEqual(score.evidence_quality, 0.0)
+
+    def test_normal_context_keeps_base_weights(self):
+        effective, audit = contextual_weights(
+            state(evidence_completeness="sufficient", state_confidence=0.9),
+            self.engine.policy,
+        )
+        self.assertEqual(audit["applied_rules"], [])
+        self.assertEqual(dict(effective), dict(self.engine.policy.weights))
+
+    def test_early_context_adjusts_only_ranking_weights(self):
+        effective, audit = contextual_weights(
+            state(
+                process_state="EARLY_SUPPORT_OPPORTUNITY",
+                support_opportunity="EARLY_SUPPORT",
+                evidence_completeness="sufficient",
+                state_confidence=0.9,
+                support_profile={
+                    "criteria_basis_reconstruction": {
+                        "observed_work": "NONE",
+                        "support_need": "NONE",
+                        "confidence": "HIGH",
+                    },
+                    "project_state_reconstruction": {
+                        "observed_work": "OBSERVED",
+                        "support_need": "MEDIUM",
+                        "confidence": "HIGH",
+                    },
+                    "evidence_action_governance": {
+                        "observed_work": "OBSERVED",
+                        "support_need": "MEDIUM",
+                        "confidence": "HIGH",
+                    },
+                },
+            ),
+            self.engine.policy,
+        )
+        self.assertEqual(audit["applied_rules"], ["MULTI_BASIS"])
+        self.assertAlmostEqual(sum(effective.values()), 1.0)
+        self.assertNotEqual(dict(effective), dict(self.engine.policy.weights))
+
+    def test_reference_point_objective_is_lower_when_target_gap_is_reduced(self):
+        decision_state = state(
+            support_needs={
+                "criteria_basis_reconstruction": 3,
+                "project_state_reconstruction": 0,
+                "evidence_action_governance": 0,
+            }
+        )
+        target = target_vector(decision_state, self.engine.policy)
+        weak = ScoreVector(0.0, 0.0, 0.0, 0.0, 0.0)
+        strong = ScoreVector(target["criteria_basis_reconstruction"], 0.0, 0.0, 0.0, 0.0)
+        weak_value, _, weak_gaps = objective_value(weak, decision_state, self.engine.policy)
+        strong_value, _, strong_gaps = objective_value(strong, decision_state, self.engine.policy)
+        self.assertGreater(weak_value, strong_value)
+        self.assertGreater(weak_gaps["criteria_basis_reconstruction"], 0.0)
+        self.assertEqual(strong_gaps["criteria_basis_reconstruction"], 0.0)
 
 
 class SkylineTests(unittest.TestCase):

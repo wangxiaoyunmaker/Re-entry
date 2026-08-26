@@ -19,6 +19,15 @@ class ProcessState(str, Enum):
     GOVERNANCE_RECOVERING = "GOVERNANCE_RECOVERING"
 
 
+class SupportOpportunity(str, Enum):
+    """Runtime classification of whether support is warranted now."""
+
+    NONE = "NONE"
+    EARLY_SUPPORT = "EARLY_SUPPORT"
+    REENTRY_SUPPORT = "REENTRY_SUPPORT"
+    ABSTAIN = "ABSTAIN"
+
+
 class Primitive(str, Enum):
     RULE_ALIGNMENT = "RULE_ALIGNMENT"
     PROVENANCE = "PROVENANCE"
@@ -87,8 +96,12 @@ class Outcome(str, Enum):
     SAFE_HOLD = "SAFE_HOLD"
 
 
-CRITERIA = ("O", "S", "D", "E", "W")
-NEEDS = ("O", "S", "D")
+SUPPORT_DIMENSIONS = (
+    "criteria_basis_reconstruction",
+    "project_state_reconstruction",
+    "evidence_action_governance",
+)
+SCORE_DIMENSIONS = (*SUPPORT_DIMENSIONS, "evidence_quality", "workflow_continuity")
 
 
 def _require_mapping(value: Any, field_name: str) -> Mapping[str, Any]:
@@ -136,7 +149,7 @@ class EvidenceRef:
     observed_at: str | None = None
     sequence_index: int | None = None
     content_sha256: str | None = None
-    supports_needs: tuple[str, ...] = ()
+    supports_dimensions: tuple[str, ...] = ()
     supports_primitives: tuple[Primitive, ...] = ()
     available_at_decision: bool | None = None
 
@@ -153,7 +166,7 @@ class EvidenceRef:
                 "observed_at",
                 "sequence_index",
                 "content_sha256",
-                "supports_needs",
+                "supports_dimensions",
                 "supports_primitives",
                 "available_at_decision",
             },
@@ -180,11 +193,13 @@ class EvidenceRef:
             or any(character not in "0123456789abcdef" for character in content_sha256)
         ):
             raise ValidationError("content_sha256 must be a lowercase SHA-256 hex digest")
-        raw_needs = data.get("supports_needs", [])
-        if not isinstance(raw_needs, list) or any(item not in NEEDS for item in raw_needs):
-            raise ValidationError("supports_needs must contain only O, S, or D")
-        if len(set(raw_needs)) != len(raw_needs):
-            raise ValidationError("supports_needs must not contain duplicates")
+        raw_dimensions = data.get("supports_dimensions", [])
+        if not isinstance(raw_dimensions, list) or any(
+            item not in SUPPORT_DIMENSIONS for item in raw_dimensions
+        ):
+            raise ValidationError("supports_dimensions contains an unknown support dimension")
+        if len(set(raw_dimensions)) != len(raw_dimensions):
+            raise ValidationError("supports_dimensions must not contain duplicates")
         raw_primitives = data.get("supports_primitives", [])
         if not isinstance(raw_primitives, list):
             raise ValidationError("supports_primitives must be an array")
@@ -212,7 +227,7 @@ class EvidenceRef:
                 raise ValidationError(
                     "retrace-state-v2 evidence must be available_at_decision=true"
                 )
-            if not raw_needs and not supports_primitives:
+            if not raw_dimensions and not supports_primitives:
                 raise ValidationError(
                     "retrace-state-v2 evidence requires a need or primitive binding"
                 )
@@ -223,7 +238,7 @@ class EvidenceRef:
             observed_at=observed_at,
             sequence_index=sequence_index,
             content_sha256=content_sha256,
-            supports_needs=tuple(raw_needs),
+            supports_dimensions=tuple(raw_dimensions),
             supports_primitives=supports_primitives,
             available_at_decision=available_at_decision,
         )
@@ -241,8 +256,8 @@ class EvidenceRef:
             result["sequence_index"] = self.sequence_index
         if self.content_sha256 is not None:
             result["content_sha256"] = self.content_sha256
-        if self.supports_needs:
-            result["supports_needs"] = list(self.supports_needs)
+        if self.supports_dimensions:
+            result["supports_dimensions"] = list(self.supports_dimensions)
         if self.supports_primitives:
             result["supports_primitives"] = [
                 primitive.value for primitive in self.supports_primitives
@@ -253,20 +268,20 @@ class EvidenceRef:
 
 
 @dataclass(frozen=True)
-class GovernanceNeeds:
-    O: int
-    S: int
-    D: int
+class SupportNeeds:
+    criteria_basis_reconstruction: int
+    project_state_reconstruction: int
+    evidence_action_governance: int
 
     @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> "GovernanceNeeds":
-        data = _require_mapping(raw, "governance_needs")
-        _check_keys(data, required=set(NEEDS), context="governance_needs")
+    def from_dict(cls, raw: Mapping[str, Any]) -> "SupportNeeds":
+        data = _require_mapping(raw, "support_needs")
+        _check_keys(data, required=set(SUPPORT_DIMENSIONS), context="support_needs")
         values: dict[str, int] = {}
-        for key in NEEDS:
+        for key in SUPPORT_DIMENSIONS:
             value = data[key]
             if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 3:
-                raise ValidationError(f"governance_needs.{key} must be an integer in [0, 3]")
+                raise ValidationError(f"support_needs.{key} must be an integer in [0, 3]")
             values[key] = value
         return cls(**values)
 
@@ -274,7 +289,7 @@ class GovernanceNeeds:
         return getattr(self, key) / 3.0
 
     def to_dict(self) -> dict[str, int]:
-        return {key: getattr(self, key) for key in NEEDS}
+        return {key: getattr(self, key) for key in SUPPORT_DIMENSIONS}
 
 
 @dataclass(frozen=True)
@@ -282,7 +297,8 @@ class DecisionState:
     schema_version: str
     decision_id: str
     process_state: ProcessState
-    governance_needs: GovernanceNeeds
+    support_opportunity: SupportOpportunity
+    support_needs: SupportNeeds
     evidence: tuple[EvidenceRef, ...]
     consequence: Risk
     reversibility: Risk
@@ -291,6 +307,16 @@ class DecisionState:
     state_confidence: float
     recent_interventions: int
     active_verification: bool
+    support_profile: Mapping[str, Mapping[str, str]] | None = None
+    basis_relevant_signal: bool | None = None
+    delegation_failure_signal: bool | None = None
+    repeated_unresolved: bool | None = None
+    target_key: str | None = None
+    delegation_attempt_count: int | None = None
+    last_confirmed_progress: bool | None = None
+    failure_window: int | None = None
+    cooldown_until: str | None = None
+    recent_intervention_ids: tuple[str, ...] | None = None
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "DecisionState":
@@ -299,7 +325,8 @@ class DecisionState:
             "schema_version",
             "decision_id",
             "process_state",
-            "governance_needs",
+            "support_opportunity",
+            "support_needs",
             "evidence",
             "consequence",
             "reversibility",
@@ -309,7 +336,23 @@ class DecisionState:
             "recent_interventions",
             "active_verification",
         }
-        _check_keys(data, required=required, context="state")
+        _check_keys(
+            data,
+            required=required,
+            optional={
+                "support_profile",
+                "basis_relevant_signal",
+                "delegation_failure_signal",
+                "repeated_unresolved",
+                "target_key",
+                "delegation_attempt_count",
+                "last_confirmed_progress",
+                "failure_window",
+                "cooldown_until",
+                "recent_intervention_ids",
+            },
+            context="state",
+        )
         if data["schema_version"] not in {"retrace-state-v1", "retrace-state-v2"}:
             raise ValidationError(f"unsupported state schema: {data['schema_version']}")
         decision_id = data["decision_id"]
@@ -317,6 +360,7 @@ class DecisionState:
             raise ValidationError("decision_id must be a non-empty string")
         try:
             process_state = ProcessState(data["process_state"])
+            support_opportunity = SupportOpportunity(data["support_opportunity"])
             consequence = Risk(data["consequence"])
             reversibility = Risk(data["reversibility"])
             authorization_risk = Risk(data["authorization_risk"])
@@ -349,11 +393,90 @@ class DecisionState:
         active_verification = data["active_verification"]
         if not isinstance(active_verification, bool):
             raise ValidationError("active_verification must be boolean")
+        runtime_signals: dict[str, bool | None] = {}
+        for field_name in (
+            "basis_relevant_signal",
+            "delegation_failure_signal",
+            "repeated_unresolved",
+        ):
+            value = data.get(field_name)
+            if value is not None and not isinstance(value, bool):
+                raise ValidationError(f"{field_name} must be boolean when set")
+            runtime_signals[field_name] = value
+        target_key = data.get("target_key")
+        if target_key is not None and (
+            not isinstance(target_key, str) or not target_key.strip()
+        ):
+            raise ValidationError("target_key must be a non-empty string when set")
+        delegation_attempt_count = data.get("delegation_attempt_count")
+        if delegation_attempt_count is not None:
+            delegation_attempt_count = _nonnegative_int(
+                delegation_attempt_count, "delegation_attempt_count"
+            )
+        last_confirmed_progress = data.get("last_confirmed_progress")
+        if last_confirmed_progress is not None and not isinstance(
+            last_confirmed_progress, bool
+        ):
+            raise ValidationError("last_confirmed_progress must be boolean when set")
+        failure_window = data.get("failure_window")
+        if failure_window is not None:
+            failure_window = _nonnegative_int(failure_window, "failure_window")
+        cooldown_until = data.get("cooldown_until")
+        if cooldown_until is not None and (
+            not isinstance(cooldown_until, str) or not cooldown_until.strip()
+        ):
+            raise ValidationError("cooldown_until must be a non-empty string when set")
+        recent_intervention_ids = data.get("recent_intervention_ids")
+        if recent_intervention_ids is not None:
+            if not isinstance(recent_intervention_ids, list) or any(
+                not isinstance(item, str) or not item.strip()
+                for item in recent_intervention_ids
+            ):
+                raise ValidationError(
+                    "recent_intervention_ids must be a string array when set"
+                )
+            if len(set(recent_intervention_ids)) != len(recent_intervention_ids):
+                raise ValidationError("recent_intervention_ids must be unique")
+        raw_profile = data.get("support_profile")
+        support_profile = None
+        if raw_profile is not None:
+            profile_data = _require_mapping(raw_profile, "support_profile")
+            _check_keys(profile_data, required=set(SUPPORT_DIMENSIONS), context="support_profile")
+            normalized_profile: dict[str, Mapping[str, str]] = {}
+            for dimension in SUPPORT_DIMENSIONS:
+                item = _require_mapping(profile_data[dimension], f"support_profile.{dimension}")
+                _check_keys(
+                    item,
+                    required={"observed_work", "support_need", "confidence"},
+                    context=f"support_profile.{dimension}",
+                )
+                observed_work = item["observed_work"]
+                support_need = item["support_need"]
+                confidence = item["confidence"]
+                if observed_work not in {"NONE", "POSSIBLE", "OBSERVED"}:
+                    raise ValidationError(
+                        f"support_profile.{dimension}.observed_work is invalid"
+                    )
+                if support_need not in {"NONE", "LOW", "MEDIUM", "HIGH"}:
+                    raise ValidationError(
+                        f"support_profile.{dimension}.support_need is invalid"
+                    )
+                if confidence not in {"LOW", "MEDIUM", "HIGH"}:
+                    raise ValidationError(
+                        f"support_profile.{dimension}.confidence is invalid"
+                    )
+                normalized_profile[dimension] = {
+                    "observed_work": observed_work,
+                    "support_need": support_need,
+                    "confidence": confidence,
+                }
+            support_profile = normalized_profile
         return cls(
             schema_version=data["schema_version"],
             decision_id=decision_id.strip(),
             process_state=process_state,
-            governance_needs=GovernanceNeeds.from_dict(data["governance_needs"]),
+            support_opportunity=support_opportunity,
+            support_needs=SupportNeeds.from_dict(data["support_needs"]),
             evidence=evidence,
             consequence=consequence,
             reversibility=reversibility,
@@ -364,14 +487,29 @@ class DecisionState:
                 data["recent_interventions"], "recent_interventions"
             ),
             active_verification=active_verification,
+            support_profile=support_profile,
+            basis_relevant_signal=runtime_signals["basis_relevant_signal"],
+            delegation_failure_signal=runtime_signals["delegation_failure_signal"],
+            repeated_unresolved=runtime_signals["repeated_unresolved"],
+            target_key=target_key.strip() if target_key is not None else None,
+            delegation_attempt_count=delegation_attempt_count,
+            last_confirmed_progress=last_confirmed_progress,
+            failure_window=failure_window,
+            cooldown_until=cooldown_until.strip() if cooldown_until is not None else None,
+            recent_intervention_ids=(
+                tuple(recent_intervention_ids)
+                if recent_intervention_ids is not None
+                else None
+            ),
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "schema_version": self.schema_version,
             "decision_id": self.decision_id,
             "process_state": self.process_state.value,
-            "governance_needs": self.governance_needs.to_dict(),
+            "support_opportunity": self.support_opportunity.value,
+            "support_needs": self.support_needs.to_dict(),
             "evidence": [item.to_dict() for item in self.evidence],
             "consequence": self.consequence.value,
             "reversibility": self.reversibility.value,
@@ -381,11 +519,37 @@ class DecisionState:
             "recent_interventions": self.recent_interventions,
             "active_verification": self.active_verification,
         }
+        if self.support_profile is not None:
+            result["support_profile"] = {
+                dimension: dict(values)
+                for dimension, values in self.support_profile.items()
+            }
+        for field_name in (
+            "basis_relevant_signal",
+            "delegation_failure_signal",
+            "repeated_unresolved",
+        ):
+            value = getattr(self, field_name)
+            if value is not None:
+                result[field_name] = value
+        for field_name in (
+            "target_key",
+            "delegation_attempt_count",
+            "last_confirmed_progress",
+            "failure_window",
+            "cooldown_until",
+        ):
+            value = getattr(self, field_name)
+            if value is not None:
+                result[field_name] = value
+        if self.recent_intervention_ids is not None:
+            result["recent_intervention_ids"] = list(self.recent_intervention_ids)
+        return result
 
 
 @dataclass(frozen=True)
 class PrimitiveProfile:
-    primary_need: str
+    primary_support_dimension: str
     capabilities: Mapping[str, float]
     burden: Mapping[Level, float]
     minimum_evidence: Mapping[Level, EvidenceCompleteness]
@@ -395,6 +559,7 @@ class PrimitiveProfile:
 class Thresholds:
     low_confidence: float
     gain: float
+    early_support_gain_floor: float
     near_tie: float
     dominance_epsilon: float
     max_burden: float
@@ -409,6 +574,8 @@ class PolicySpec:
     engine_version: str
     thresholds: Thresholds
     weights: Mapping[str, float]
+    contextual_weight_adjustment: Mapping[str, Any]
+    objective: Mapping[str, Any]
     allowed_levels: Mapping[ProcessState, tuple[Level, ...]]
     level_multipliers: Mapping[Level, float]
     primitive_profiles: Mapping[Primitive, PrimitiveProfile]
@@ -461,23 +628,23 @@ class DecisionBrief:
 
 @dataclass(frozen=True)
 class ScoreVector:
-    O: float
-    S: float
-    D: float
-    E: float
-    W: float
+    criteria_basis_reconstruction: float
+    project_state_reconstruction: float
+    evidence_action_governance: float
+    evidence_quality: float
+    workflow_continuity: float
 
     def __post_init__(self) -> None:
-        for key in CRITERIA:
+        for key in SCORE_DIMENSIONS:
             value = getattr(self, key)
             if not math.isfinite(value) or not 0.0 <= value <= 1.0:
                 raise ValidationError(f"score {key} must be finite and within [0, 1]")
 
     def vector(self) -> tuple[float, ...]:
-        return tuple(getattr(self, key) for key in CRITERIA)
+        return tuple(getattr(self, key) for key in SCORE_DIMENSIONS)
 
     def to_dict(self) -> dict[str, float]:
-        return {key: getattr(self, key) for key in CRITERIA}
+        return {key: getattr(self, key) for key in SCORE_DIMENSIONS}
 
 
 @dataclass(frozen=True)
@@ -501,8 +668,27 @@ class CandidateEvaluation:
     brief: DecisionBrief
     constraints: tuple[ConstraintRecord, ...] = ()
     score: ScoreVector | None = None
-    utility: float | None = None
-    gain_vs_no_intervention: float | None = None
+    objective_value: float | None = None
+    objective_improvement_vs_no_intervention: float | None = None
+
+    # Compatibility aliases for older callers. The selector no longer uses a
+    # utility objective; these names now refer to J(c) and its improvement over
+    # the no-intervention baseline.
+    @property
+    def utility(self) -> float | None:
+        return self.objective_value
+
+    @utility.setter
+    def utility(self, value: float | None) -> None:
+        self.objective_value = value
+
+    @property
+    def gain_vs_no_intervention(self) -> float | None:
+        return self.objective_improvement_vs_no_intervention
+
+    @gain_vs_no_intervention.setter
+    def gain_vs_no_intervention(self, value: float | None) -> None:
+        self.objective_improvement_vs_no_intervention = value
 
     @property
     def allowed(self) -> bool:
@@ -518,8 +704,8 @@ class CandidateEvaluation:
             "allowed": self.allowed,
             "constraints": [record.to_dict() for record in self.constraints],
             "score": self.score.to_dict() if self.score else None,
-            "utility": self.utility,
-            "gain_vs_no_intervention": self.gain_vs_no_intervention,
+            "objective_value": self.objective_value,
+            "objective_improvement_vs_no_intervention": self.objective_improvement_vs_no_intervention,
         }
 
 

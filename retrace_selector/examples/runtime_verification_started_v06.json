@@ -1,0 +1,9 @@
+{
+  "schema_version": "retrace-runtime-event-v0.6",
+  "event_id": "EVENT-example-verification-001",
+  "session_id": "SESSION-example",
+  "event_type": "VERIFICATION_STARTED",
+  "metadata": {
+    "source": "host-agent"
+  }
+}

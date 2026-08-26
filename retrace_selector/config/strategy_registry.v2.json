@@ -1,0 +1,40 @@
+{
+  "registry_version": "STRATEGY-REGISTRY-V2-TEST",
+  "registry_status": "TEST_ONLY",
+  "candidates": [
+    {
+      "strategy_id": "STATE_TRACE",
+      "strategy_family": "STATE_TRACE",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.10, "state": 0.45, "action": 0.10, "evidence": 0.70, "workflow": 0.90},
+      "template_id": "STATE_TRACE_L1"
+    },
+    {
+      "strategy_id": "STATE_TRACE",
+      "strategy_family": "STATE_TRACE",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.10, "state": 0.70, "action": 0.10, "evidence": 0.80, "workflow": 0.80},
+      "template_id": "STATE_TRACE_L2"
+    },
+    {
+      "strategy_id": "RULE_CHECK",
+      "strategy_family": "RULE_CHECK",
+      "intensity": "L1",
+      "parameters": {"criteria": 0.45, "state": 0.10, "action": 0.20, "evidence": 0.70, "workflow": 0.88},
+      "template_id": "RULE_CHECK_L1"
+    },
+    {
+      "strategy_id": "RULE_CHECK",
+      "strategy_family": "RULE_CHECK",
+      "intensity": "L2",
+      "parameters": {"criteria": 0.70, "state": 0.15, "action": 0.30, "evidence": 0.85, "workflow": 0.72},
+      "template_id": "RULE_CHECK_L2"
+    }
+  ],
+  "templates": {
+    "STATE_TRACE_L1": {"title": "查看项目状态", "message": "展开与当前问题直接相关的来源。", "next_step": "选择一份权威状态。"},
+    "STATE_TRACE_L2": {"title": "重建当前项目状态", "message": "先核对相关版本、来源和影响范围。", "next_step": "确认后续依据。"},
+    "RULE_CHECK_L1": {"title": "查看判断标准", "message": "补充当前结果需要满足的规则或边界。", "next_step": "确认一条验收条件。"},
+    "RULE_CHECK_L2": {"title": "确认验收标准", "message": "继续修改前先把目标转化为可观察条件。", "next_step": "确认、修改或拒绝该标准。"}
+  }
+}

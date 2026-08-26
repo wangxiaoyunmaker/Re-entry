@@ -1,10 +1,11 @@
 {
   "schema_version": "retrace-policy-v1",
-  "policy_version": "skyline-mvp-v0.2",
+  "policy_version": "skyline-evidence-conditioned-v0.3.4-support-profile-weighted",
   "engine_version": "0.2.0",
   "thresholds": {
     "low_confidence": 0.6,
     "gain": 0.05,
+    "early_support_gain_floor": -0.06,
     "near_tie": 0.03,
     "dominance_epsilon": 1e-09,
     "max_burden": 0.8,
@@ -12,11 +13,60 @@
     "cooldown_penalty_per_intervention": 0.05
   },
   "weights": {
-    "O": 0.2,
-    "S": 0.2,
-    "D": 0.25,
-    "E": 0.15,
-    "W": 0.2
+    "criteria_basis_reconstruction": 0.2,
+    "project_state_reconstruction": 0.2,
+    "evidence_action_governance": 0.25,
+    "evidence_quality": 0.15,
+    "workflow_continuity": 0.2
+  },
+  "objective": {
+    "max_gap_penalty": 0.5,
+    "workflow_target": 0.8,
+    "evidence_target_by_risk": {
+      "low": 0.5,
+      "medium": 0.5,
+      "high": 1.0
+    }
+  },
+  "contextual_weight_adjustment": {
+    "max_abs_delta": 0.1,
+    "rules": {
+      "FOCUS_CRITERIA_BASIS": {
+        "criteria_basis_reconstruction": 0.1,
+        "project_state_reconstruction": -0.05,
+        "evidence_action_governance": -0.05,
+        "evidence_quality": 0.0,
+        "workflow_continuity": 0.0
+      },
+      "FOCUS_PROJECT_STATE": {
+        "criteria_basis_reconstruction": -0.05,
+        "project_state_reconstruction": 0.1,
+        "evidence_action_governance": -0.05,
+        "evidence_quality": 0.0,
+        "workflow_continuity": 0.0
+      },
+      "FOCUS_EVIDENCE_ACTION": {
+        "criteria_basis_reconstruction": -0.05,
+        "project_state_reconstruction": -0.05,
+        "evidence_action_governance": 0.1,
+        "evidence_quality": 0.0,
+        "workflow_continuity": 0.0
+      },
+      "MULTI_BASIS": {
+        "criteria_basis_reconstruction": 0.02,
+        "project_state_reconstruction": 0.02,
+        "evidence_action_governance": 0.06,
+        "evidence_quality": -0.05,
+        "workflow_continuity": -0.05
+      },
+      "LOW_PROFILE_CONFIDENCE": {
+        "criteria_basis_reconstruction": -0.02,
+        "project_state_reconstruction": -0.02,
+        "evidence_action_governance": 0.05,
+        "evidence_quality": 0.04,
+        "workflow_continuity": -0.05
+      }
+    }
   },
   "allowed_levels": {
     "DELEGATION_PROGRESSING": [],
@@ -25,38 +75,38 @@
     "GOVERNANCE_RECOVERING": ["L1"]
   },
   "level_multipliers": {
-    "L1": 0.5,
-    "L2": 0.75,
-    "L3": 1.0
+    "L1": 0.6,
+    "L2": 0.8,
+    "L3": 0.9
   },
   "primitive_profiles": {
     "RULE_ALIGNMENT": {
-      "primary_need": "O",
-      "capabilities": {"O": 1.0, "S": 0.3, "D": 0.2},
+      "primary_support_dimension": "criteria_basis_reconstruction",
+      "capabilities": {"criteria_basis_reconstruction": 1.0, "project_state_reconstruction": 0.3, "evidence_action_governance": 0.2},
       "burden": {"L1": 0.12, "L2": 0.3, "L3": 0.55},
       "minimum_evidence": {"L1": "none", "L2": "partial", "L3": "partial"}
     },
     "PROVENANCE": {
-      "primary_need": "S",
-      "capabilities": {"O": 0.1, "S": 0.9, "D": 0.3},
+      "primary_support_dimension": "project_state_reconstruction",
+      "capabilities": {"criteria_basis_reconstruction": 0.1, "project_state_reconstruction": 0.9, "evidence_action_governance": 0.3},
       "burden": {"L1": 0.1, "L2": 0.25, "L3": 0.5},
       "minimum_evidence": {"L1": "partial", "L2": "partial", "L3": "sufficient"}
     },
     "CAUSAL_EXPLANATION": {
-      "primary_need": "S",
-      "capabilities": {"O": 0.2, "S": 1.0, "D": 0.3},
+      "primary_support_dimension": "project_state_reconstruction",
+      "capabilities": {"criteria_basis_reconstruction": 0.2, "project_state_reconstruction": 1.0, "evidence_action_governance": 0.3},
       "burden": {"L1": 0.18, "L2": 0.4, "L3": 0.7},
       "minimum_evidence": {"L1": "partial", "L2": "sufficient", "L3": "sufficient"}
     },
     "VERIFICATION": {
-      "primary_need": "D",
-      "capabilities": {"O": 0.2, "S": 0.3, "D": 1.0},
+      "primary_support_dimension": "evidence_action_governance",
+      "capabilities": {"criteria_basis_reconstruction": 0.2, "project_state_reconstruction": 0.3, "evidence_action_governance": 1.0},
       "burden": {"L1": 0.12, "L2": 0.32, "L3": 0.6},
       "minimum_evidence": {"L1": "none", "L2": "partial", "L3": "sufficient"}
     },
     "DISPOSITION_COORDINATION": {
-      "primary_need": "D",
-      "capabilities": {"O": 0.3, "S": 0.3, "D": 1.0},
+      "primary_support_dimension": "evidence_action_governance",
+      "capabilities": {"criteria_basis_reconstruction": 0.3, "project_state_reconstruction": 0.3, "evidence_action_governance": 1.0},
       "burden": {"L1": 0.15, "L2": 0.35, "L3": 0.62},
       "minimum_evidence": {"L1": "none", "L2": "partial", "L3": "partial"}
     }

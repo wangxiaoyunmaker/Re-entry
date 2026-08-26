@@ -8,8 +8,8 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from .models import (
-    CRITERIA,
-    NEEDS,
+    SCORE_DIMENSIONS,
+    SUPPORT_DIMENSIONS,
     EvidenceCompleteness,
     Level,
     PolicySpec,
@@ -46,6 +46,15 @@ def _frozen_mapping(data: Mapping[Any, Any]) -> Mapping[Any, Any]:
     return MappingProxyType(dict(data))
 
 
+def _finite_signed_unit_float(value: Any, field_name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValidationError(f"{field_name} must be numeric")
+    value = float(value)
+    if not math.isfinite(value) or not -1.0 <= value <= 1.0:
+        raise ValidationError(f"{field_name} must be finite and within [-1, 1]")
+    return value
+
+
 def load_json(path: str | Path) -> Any:
     try:
         with Path(path).open("r", encoding="utf-8") as handle:
@@ -77,6 +86,8 @@ def load_policy(path: str | Path) -> PolicySpec:
         "engine_version",
         "thresholds",
         "weights",
+        "contextual_weight_adjustment",
+        "objective",
         "allowed_levels",
         "level_multipliers",
         "primitive_profiles",
@@ -97,6 +108,7 @@ def load_policy(path: str | Path) -> PolicySpec:
     threshold_keys = {
         "low_confidence",
         "gain",
+        "early_support_gain_floor",
         "near_tie",
         "dominance_epsilon",
         "max_burden",
@@ -110,11 +122,22 @@ def load_policy(path: str | Path) -> PolicySpec:
     epsilon = float(epsilon)
     if not math.isfinite(epsilon) or not 0 < epsilon <= 1:
         raise ValidationError("dominance_epsilon must be finite and within (0, 1]")
+    early_support_gain_floor = threshold_raw["early_support_gain_floor"]
+    if isinstance(early_support_gain_floor, bool) or not isinstance(
+        early_support_gain_floor, (int, float)
+    ):
+        raise ValidationError("thresholds.early_support_gain_floor must be numeric")
+    early_support_gain_floor = float(early_support_gain_floor)
+    if not math.isfinite(early_support_gain_floor) or not -1.0 <= early_support_gain_floor <= 1.0:
+        raise ValidationError(
+            "thresholds.early_support_gain_floor must be finite and within [-1, 1]"
+        )
     thresholds = Thresholds(
         low_confidence=_finite_unit_float(
             threshold_raw["low_confidence"], "thresholds.low_confidence"
         ),
         gain=_finite_unit_float(threshold_raw["gain"], "thresholds.gain"),
+        early_support_gain_floor=early_support_gain_floor,
         near_tie=_finite_unit_float(
             threshold_raw["near_tie"], "thresholds.near_tie"
         ),
@@ -132,12 +155,85 @@ def load_policy(path: str | Path) -> PolicySpec:
     )
 
     weight_raw = _require_mapping(data["weights"], "weights")
-    _check_keys(weight_raw, required=set(CRITERIA), context="weights")
+    _check_keys(weight_raw, required=set(SCORE_DIMENSIONS), context="weights")
     weights = {
-        key: _finite_unit_float(weight_raw[key], f"weights.{key}") for key in CRITERIA
+        key: _finite_unit_float(weight_raw[key], f"weights.{key}")
+        for key in SCORE_DIMENSIONS
     }
     if not math.isclose(sum(weights.values()), 1.0, abs_tol=1e-9):
         raise ValidationError("policy weights must sum to 1")
+
+    objective_raw = _require_mapping(data["objective"], "objective")
+    _check_keys(
+        objective_raw,
+        required={"max_gap_penalty", "workflow_target", "evidence_target_by_risk"},
+        context="objective",
+    )
+    max_gap_penalty = _finite_unit_float(
+        objective_raw["max_gap_penalty"], "objective.max_gap_penalty"
+    )
+    workflow_target = _finite_unit_float(
+        objective_raw["workflow_target"], "objective.workflow_target"
+    )
+    evidence_targets_raw = _require_mapping(
+        objective_raw["evidence_target_by_risk"],
+        "objective.evidence_target_by_risk",
+    )
+    _check_keys(
+        evidence_targets_raw,
+        required={"low", "medium", "high"},
+        context="objective.evidence_target_by_risk",
+    )
+    evidence_targets = {
+        risk: _finite_unit_float(
+            evidence_targets_raw[risk],
+            f"objective.evidence_target_by_risk.{risk}",
+        )
+        for risk in ("low", "medium", "high")
+    }
+
+    contextual_raw = _require_mapping(
+        data["contextual_weight_adjustment"], "contextual_weight_adjustment"
+    )
+    _check_keys(
+        contextual_raw,
+        required={"max_abs_delta", "rules"},
+        context="contextual_weight_adjustment",
+    )
+    max_abs_delta = _finite_unit_float(
+        contextual_raw["max_abs_delta"],
+        "contextual_weight_adjustment.max_abs_delta",
+    )
+    rules_raw = _require_mapping(
+        contextual_raw["rules"], "contextual_weight_adjustment.rules"
+    )
+    contextual_rules: dict[str, Mapping[str, float]] = {}
+    for rule_id, delta_raw_value in rules_raw.items():
+        rule_name = _nonempty_string(rule_id, "contextual_weight_adjustment rule id")
+        delta_raw = _require_mapping(
+            delta_raw_value, f"contextual_weight_adjustment.rules.{rule_name}"
+        )
+        _check_keys(
+            delta_raw,
+            required=set(SCORE_DIMENSIONS),
+            context=f"contextual_weight_adjustment.rules.{rule_name}",
+        )
+        delta = {
+            key: _finite_signed_unit_float(
+                delta_raw[key],
+                f"contextual_weight_adjustment.rules.{rule_name}.{key}",
+            )
+            for key in SCORE_DIMENSIONS
+        }
+        if any(abs(value) > max_abs_delta for value in delta.values()):
+            raise ValidationError(
+                f"contextual adjustment {rule_name} exceeds max_abs_delta"
+            )
+        if not math.isclose(sum(delta.values()), 0.0, abs_tol=1e-9):
+            raise ValidationError(
+                f"contextual adjustment {rule_name} must sum to zero"
+            )
+        contextual_rules[rule_name] = _frozen_mapping(delta)
 
     allowed_raw = _require_mapping(data["allowed_levels"], "allowed_levels")
     _check_keys(
@@ -174,25 +270,32 @@ def load_policy(path: str | Path) -> PolicySpec:
         item = _require_mapping(profile_raw[primitive.value], f"profile.{primitive.value}")
         _check_keys(
             item,
-            required={"primary_need", "capabilities", "burden", "minimum_evidence"},
+            required={
+                "primary_support_dimension",
+                "capabilities",
+                "burden",
+                "minimum_evidence",
+            },
             context=f"profile.{primitive.value}",
         )
-        primary_need = item["primary_need"]
-        if primary_need not in NEEDS:
-            raise ValidationError(f"profile.{primitive.value}.primary_need is invalid")
+        primary_dimension = item["primary_support_dimension"]
+        if primary_dimension not in SUPPORT_DIMENSIONS:
+            raise ValidationError(
+                f"profile.{primitive.value}.primary_support_dimension is invalid"
+            )
         capabilities_raw = _require_mapping(
             item["capabilities"], f"profile.{primitive.value}.capabilities"
         )
         _check_keys(
             capabilities_raw,
-            required=set(NEEDS),
+            required=set(SUPPORT_DIMENSIONS),
             context=f"profile.{primitive.value}.capabilities",
         )
         capabilities = {
             key: _finite_unit_float(
                 capabilities_raw[key], f"profile.{primitive.value}.capabilities.{key}"
             )
-            for key in NEEDS
+            for key in SUPPORT_DIMENSIONS
         }
         burden = _level_map(
             item["burden"], f"profile.{primitive.value}.burden", _finite_unit_float
@@ -217,7 +320,7 @@ def load_policy(path: str | Path) -> PolicySpec:
                 f"profile.{primitive.value}.minimum_evidence must be non-decreasing"
             )
         primitive_profiles[primitive] = PrimitiveProfile(
-            primary_need=primary_need,
+            primary_support_dimension=primary_dimension,
             capabilities=_frozen_mapping(capabilities),
             burden=_frozen_mapping(burden),
             minimum_evidence=_frozen_mapping(minimum_evidence),
@@ -229,6 +332,15 @@ def load_policy(path: str | Path) -> PolicySpec:
         engine_version=ENGINE_VERSION,
         thresholds=thresholds,
         weights=_frozen_mapping(weights),
+        contextual_weight_adjustment=_frozen_mapping({
+            "max_abs_delta": max_abs_delta,
+            "rules": _frozen_mapping(contextual_rules),
+        }),
+        objective=_frozen_mapping({
+            "max_gap_penalty": max_gap_penalty,
+            "workflow_target": workflow_target,
+            "evidence_target_by_risk": _frozen_mapping(evidence_targets),
+        }),
         allowed_levels=_frozen_mapping(allowed_levels),
         level_multipliers=_frozen_mapping(level_multipliers),
         primitive_profiles=_frozen_mapping(primitive_profiles),

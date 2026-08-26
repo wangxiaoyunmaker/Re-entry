@@ -22,7 +22,12 @@ def state_dict(**overrides):
         "schema_version": "retrace-state-v1",
         "decision_id": "test-state",
         "process_state": "REENTRY_OCCASION_OBSERVED",
-        "governance_needs": {"O": 0, "S": 2, "D": 3},
+        "support_opportunity": "REENTRY_SUPPORT",
+        "support_needs": {
+            "criteria_basis_reconstruction": 0,
+            "project_state_reconstruction": 2,
+            "evidence_action_governance": 3,
+        },
         "evidence": [{"evidence_id": "E1", "source": "OBSERVED"}],
         "consequence": "medium",
         "reversibility": "medium",

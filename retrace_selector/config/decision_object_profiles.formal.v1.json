@@ -1,0 +1,60 @@
+{
+  "schema_version": "decision-object-profile-v1-formal",
+  "profiles": {
+    "FD-REENTRY-CACHE": {
+      "profile_id": "FD-REENTRY-CACHE",
+      "decision_object": "截图缓存、刷新与闪烁回归",
+      "target_state": {
+        "criteria": 2,
+        "state": 3,
+        "action": 2,
+        "rubric_version": "CSA-RUBRIC-V1"
+      },
+      "allowed_evidence_types": ["EV01", "EV05", "EV06"]
+    },
+    "FD-REENTRY-SLEEP-RULE": {
+      "profile_id": "FD-REENTRY-SLEEP-RULE",
+      "decision_object": "睡眠/起床事件的历史数据完整性",
+      "target_state": {
+        "criteria": 3,
+        "state": 2,
+        "action": 3,
+        "rubric_version": "CSA-RUBRIC-V1"
+      },
+      "allowed_evidence_types": ["EV01", "EV05", "EV06"]
+    },
+    "FD-REENTRY-CONNECTIVITY": {
+      "profile_id": "FD-REENTRY-CONNECTIVITY",
+      "decision_object": "本地代理连通性与模型选择器真实性",
+      "target_state": {
+        "criteria": 2,
+        "state": 3,
+        "action": 1,
+        "rubric_version": "CSA-RUBRIC-V1"
+      },
+      "allowed_evidence_types": ["EV01", "EV05", "EV06"]
+    },
+    "FD-REENTRY-HOVER": {
+      "profile_id": "FD-REENTRY-HOVER",
+      "decision_object": "书签级联菜单三角保护区",
+      "target_state": {
+        "criteria": 2,
+        "state": 3,
+        "action": 2,
+        "rubric_version": "CSA-RUBRIC-V1"
+      },
+      "allowed_evidence_types": ["EV01", "EV05", "EV06"]
+    },
+    "FD-REENTRY-EXCEL": {
+      "profile_id": "FD-REENTRY-EXCEL",
+      "decision_object": "Excel 标签枚举的数据源",
+      "target_state": {
+        "criteria": 2,
+        "state": 3,
+        "action": 1,
+        "rubric_version": "CSA-RUBRIC-V1"
+      },
+      "allowed_evidence_types": ["EV01", "EV05", "EV06"]
+    }
+  }
+}

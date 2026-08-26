@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .models import DecisionBrief, DecisionState, PolicySpec, Primitive, Risk
+from .models import DecisionBrief, DecisionState, PolicySpec, Primitive
 
 
 def generate_candidates(
@@ -13,15 +13,12 @@ def generate_candidates(
     if not allowed_levels:
         return tuple(candidates)
 
+    # Skyline must compare the complete intervention library that is allowed
+    # by the process state. Support need is a state-conditioned score input,
+    # not a pre-Skyline candidate deletion rule. Safety, evidence, authority,
+    # burden, and process-state restrictions remain hard constraints in
+    # evaluate_constraints().
     for primitive in sorted(Primitive, key=lambda item: item.value):
-        profile = policy.primitive_profiles[primitive]
-        need_level = getattr(state.governance_needs, profile.primary_need)
-        authorization_override = (
-            primitive is Primitive.DISPOSITION_COORDINATION
-            and state.authorization_risk is Risk.HIGH
-        )
-        if need_level == 0 and not authorization_override:
-            continue
         for level in allowed_levels:
             candidates.append(DecisionBrief.intervention(primitive, level))
 

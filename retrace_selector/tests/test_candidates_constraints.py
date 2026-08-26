@@ -24,7 +24,7 @@ class CandidateGenerationTests(unittest.TestCase):
     def test_progressing_generates_only_no_intervention(self):
         decision_state = state(
             process_state="DELEGATION_PROGRESSING",
-            governance_needs={"O": 3, "S": 3, "D": 3},
+            support_needs={"criteria_basis_reconstruction": 3, "project_state_reconstruction": 3, "evidence_action_governance": 3},
         )
         candidates = generate_candidates(decision_state, self.engine.policy)
         self.assertEqual([item.brief_id for item in candidates], ["NO_INTERVENTION"])
@@ -32,27 +32,27 @@ class CandidateGenerationTests(unittest.TestCase):
     def test_early_support_generates_only_l1(self):
         decision_state = state(
             process_state="EARLY_SUPPORT_OPPORTUNITY",
-            governance_needs={"O": 2, "S": 2, "D": 2},
+            support_needs={"criteria_basis_reconstruction": 2, "project_state_reconstruction": 2, "evidence_action_governance": 2},
         )
         candidates = generate_candidates(decision_state, self.engine.policy)
         self.assertTrue(
             all(item.is_no_intervention or item.level is Level.L1 for item in candidates)
         )
 
-    def test_zero_need_does_not_generate_unrelated_candidates(self):
-        decision_state = state(governance_needs={"O": 3, "S": 0, "D": 0})
+    def test_zero_need_still_generates_full_library_for_skyline(self):
+        decision_state = state(support_needs={"criteria_basis_reconstruction": 3, "project_state_reconstruction": 0, "evidence_action_governance": 0})
         candidates = generate_candidates(decision_state, self.engine.policy)
         primitives = {item.primitive for item in candidates if item.primitive}
-        self.assertEqual(primitives, {Primitive.RULE_ALIGNMENT})
+        self.assertEqual(primitives, set(Primitive))
 
-    def test_high_authorization_forces_disposition_candidate_generation(self):
+    def test_high_authorization_keeps_full_library_for_skyline(self):
         decision_state = state(
-            governance_needs={"O": 0, "S": 0, "D": 0},
+            support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 0, "evidence_action_governance": 0},
             authorization_risk="high",
         )
         candidates = generate_candidates(decision_state, self.engine.policy)
         primitives = {item.primitive for item in candidates if item.primitive}
-        self.assertEqual(primitives, {Primitive.DISPOSITION_COORDINATION})
+        self.assertEqual(primitives, set(Primitive))
 
 
 class ConstraintTests(unittest.TestCase):
@@ -68,7 +68,7 @@ class ConstraintTests(unittest.TestCase):
 
     def test_high_causal_explanation_requires_observed_source(self):
         decision_state = state(
-            governance_needs={"O": 0, "S": 3, "D": 0},
+            support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 3, "evidence_action_governance": 0},
             evidence=[{"evidence_id": "E1", "source": "INFERRED"}],
             evidence_completeness="sufficient",
         )
@@ -81,7 +81,7 @@ class ConstraintTests(unittest.TestCase):
 
     def test_observed_source_allows_high_causal_explanation(self):
         decision_state = state(
-            governance_needs={"O": 0, "S": 3, "D": 0},
+            support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 3, "evidence_action_governance": 0},
             evidence_completeness="sufficient",
         )
         brief = DecisionBrief.intervention(Primitive.CAUSAL_EXPLANATION, Level.L2)
@@ -138,6 +138,14 @@ class ConstraintTests(unittest.TestCase):
         l2 = DecisionBrief.intervention(Primitive.VERIFICATION, Level.L2)
         self.assertNotIn("C080_RECENT_INTERVENTION_COOLDOWN", failed_rules(l1, decision_state, self.policy))
         self.assertIn("C080_RECENT_INTERVENTION_COOLDOWN", failed_rules(l2, decision_state, self.policy))
+
+    def test_recent_intervention_ids_suppress_duplicate_candidate(self):
+        decision_state = state(recent_intervention_ids=["VERIFICATION-L1"])
+        candidate = DecisionBrief.intervention(Primitive.VERIFICATION, Level.L1)
+        self.assertIn(
+            "C085_DUPLICATE_INTERVENTION_SUPPRESSION",
+            failed_rules(candidate, decision_state, self.policy),
+        )
 
 
 if __name__ == "__main__":

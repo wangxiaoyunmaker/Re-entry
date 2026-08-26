@@ -17,17 +17,19 @@ def evidence_supports_candidate(
 ) -> bool:
     """Return whether an evidence reference is linked to this candidate.
 
-    Primitive bindings are more specific than need bindings. Legacy v1 evidence
-    with no bindings remains globally applicable for backward compatibility.
+    Primitive bindings are more specific than support-dimension bindings. An
+    evidence item without a binding remains globally applicable.
     """
 
     if brief.is_no_intervention or brief.primitive is None:
         return False
     if evidence.supports_primitives:
         return brief.primitive in evidence.supports_primitives
-    if evidence.supports_needs:
-        primary_need = policy.primitive_profiles[brief.primitive].primary_need
-        return primary_need in evidence.supports_needs
+    if evidence.supports_dimensions:
+        primary_dimension = policy.primitive_profiles[
+            brief.primitive
+        ].primary_support_dimension
+        return primary_dimension in evidence.supports_dimensions
     return True
 
 

@@ -15,12 +15,31 @@ class SelectorScenarioTests(unittest.TestCase):
         result = self.engine.select(
             state(
                 process_state="DELEGATION_PROGRESSING",
-                governance_needs={"O": 0, "S": 0, "D": 0},
+                support_opportunity="NONE",
+                support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 0, "evidence_action_governance": 0},
                 consequence="low",
                 reversibility="high",
             )
         )
         self.assertEqual(result.outcome, Outcome.NO_INTERVENTION)
+
+    def test_early_support_can_select_low_burden_l1_below_normal_gain(self):
+        result = self.engine.select(
+            state(
+                process_state="EARLY_SUPPORT_OPPORTUNITY",
+                support_opportunity="EARLY_SUPPORT",
+                support_needs={
+                    "criteria_basis_reconstruction": 0,
+                    "project_state_reconstruction": 1,
+                    "evidence_action_governance": 1,
+                },
+                evidence_completeness="partial",
+                state_confidence=0.72,
+            )
+        )
+        self.assertEqual(result.outcome, Outcome.PRESENT_CHOICES)
+        self.assertIn("VERIFICATION-L1", result.selected_ids)
+        self.assertTrue(all(item.endswith("-L1") for item in result.selected_ids))
 
     def test_low_confidence_high_risk_requests_clarification(self):
         result = self.engine.select(
@@ -64,7 +83,7 @@ class SelectorScenarioTests(unittest.TestCase):
         result = self.engine.select(
             state(
                 process_state="EARLY_SUPPORT_OPPORTUNITY",
-                governance_needs={"O": 0, "S": 2, "D": 2},
+                support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 2, "evidence_action_governance": 2},
                 evidence_completeness="sufficient",
             )
         )
@@ -74,7 +93,7 @@ class SelectorScenarioTests(unittest.TestCase):
     def test_near_tie_same_path_chooses_lower_burden(self):
         result = self.engine.select(
             state(
-                governance_needs={"O": 0, "S": 3, "D": 0},
+                support_needs={"criteria_basis_reconstruction": 0, "project_state_reconstruction": 3, "evidence_action_governance": 0},
                 evidence_completeness="sufficient",
             )
         )
