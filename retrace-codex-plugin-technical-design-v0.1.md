@@ -759,7 +759,36 @@ ERROR
 - 允许部分回答、全部跳过或关闭；
 - 保存题目文本、量表版本、回答和时间。
 
-### 9.4 UI 与主 Agent 的关系
+### 9.4 两轮三题、用户 Profile 与自主调节
+
+插件 UI 按“**两轮 × 三个问题**”呈现评测，不把实时 Observer probe 混入结果评测：
+
+| UI 时点 | 调用 | 保存内容 | 后续作用 |
+|---|---|---|---|
+| Occasion 已确认、首次干预展示前 | `submit_occasion_baseline` | 当前 chain 的 Criteria、State、Action 三道情境题；可回答、跳过或超时 | 形成 `OCCASION_BASELINE`，不直接改写 current state |
+| 互动结束、chain 关闭前 | `submit_evaluation` | 同一 chain 的 Criteria、State、Action 三道结果题；可回答或跳过 | 生成 POST 快照；完整时参与 Adaptive Controller |
+
+第二轮当前通过 `skipped_dimensions` 保存缺失；它没有把第一轮的超时标记重新解释为结果分数。
+`PRE` 不是第一轮问卷的别名，而是 UI 真正成功调用 `record_intervention_exposure` 时记录的不可变状态快照。
+`OBSERVER_PROBE` 只用于在线补充状态证据，不进入两轮 baseline/post 的自适应配对。
+
+Profile 面板对应当前实现的三个持久化层：
+
+1. `subjective_preference`：用户主动设置的 `frequency_preference`、`intensity_preference`、
+   `mode=AUTO/PAUSED` 和 `manual_lock`；
+2. `assessed_need`：由完整 baseline→POST、反馈、负担和已完成 chain 数量推断的需要信号；
+3. `effective_policy`：当前实际送入 Selector 的策略偏好。
+
+用户可以随时通过频率滑块、力度滑块和“零干预模式”自主调节。频率值为 `0.0–1.0`，只在边界内影响
+`eta` 与同 chain cooldown；力度值为 `0.0–1.0`，只映射为候选的最高允许强度；`PAUSED` 直接产生
+`NO_INTERVENTION(USER_PAUSED)`；`manual_lock` 只阻止自动学习，不阻止用户主动保存设置。每次设置都生成
+`POLICY_PREFERENCE_UPDATED` 和 preference version。
+
+只有同一用户至少有 3 个已关闭、且同时具备完整 baseline 与 POST 三维回答的 chain，插件才允许服务端运行
+小步长 Adaptive Controller。自适应写入 `ADAPTATION_UPDATE`，并保留 `adaptation_update_id`、三维缺口、
+进步、反馈、负担和 Profile version；不修改 Registry、证据门槛、`beta`、`epsilon`、历史选择或已发生的 exposure。
+
+### 9.5 UI 与主 Agent 的关系
 
 UI 的按钮默认只调用 ReTrace MCP 工具，不自动向 Codex 主对话发送消息。只有某种交互设计明确需要把用户选择转化为 Codex 指令时，才使用 MCP Apps 的 follow-up message 能力，并在发送前让用户确认。
 

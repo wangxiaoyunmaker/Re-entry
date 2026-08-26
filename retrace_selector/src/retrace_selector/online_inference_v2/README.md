@@ -41,6 +41,30 @@ workflow burden，并只在同一 decision-chain 下抑制已曝光的候选 str
 `branch_condition_code`/`branch_condition`。UI 必须先调用 `record_choice`，提交
 `selected_candidate_id`、匹配的 `choice_condition` 和 `choice_basis`，再调用 `expose`；
 未完成分叉不能曝光。
+
+## 两轮三题与三层 User Profile
+
+当前实现把场景化评测固定为“**两轮 × 三个问题**”，两轮使用同一 chain 的三个维度：
+
+| 轮次 | 服务方法 | 事件/测量点 | 说明 |
+|---|---|---|---|
+| Occasion baseline | `submit_occasion_baseline` | `USER_RESPONSE` / `OCCASION_BASELINE` | 首次真实 exposure 前的 C/S/A 情境基线 |
+| 互动结果 | `submit_evaluation` | `USER_RESPONSE` / `POST_EVALUATION` + `POST` | chain 结束时的 C/S/A 情境结果，并尝试自适应 |
+
+每轮都有 Criteria、State、Action 三道题；`CSA-LIKERT-V1` 要求整数 `1–5`。题目可以逐题回答或跳过，
+baseline 还支持显式超时；缺失保存为缺失而不是低分。`PRE` 快照由真正的 `expose()` 记录，不等同于 baseline 问卷；
+`OBSERVER_PROBE` 是独立的在线状态补充，不参与 baseline/post 配对。
+
+Profile 持久化在 `online_user_profiles`，包含三层：
+
+- `subjective_preference`：用户通过 `set_user_preferences` 主动设置的频率、力度、`AUTO/PAUSED` 和手动锁定；
+- `assessed_need`：完整 baseline→POST 后由 `AdaptiveController` 记录的 C/S/A 残余缺口、进步、反馈、负担和历史数量；
+- `effective_policy`：当前真正送给 Selector 的偏好。
+
+`get_user_profile(user_id)` 返回三层对象；`get_user_preferences(user_id)` 返回
+`effective_policy` 以保持旧调用兼容。用户设置只改 subjective/effective，自适应只改 assessed_need/effective，
+不会改 Registry、证据门槛、`beta`、`epsilon` 或历史选择。只有至少 3 个完整且已关闭的 baseline+POST chain
+后才会学习，单次频率/力度更新限制在 `±0.08`；`manual_lock`、缺失题目或不足历史只记录原因而不更新。
          → exposure → PRE → POST → linkage
 ```
 

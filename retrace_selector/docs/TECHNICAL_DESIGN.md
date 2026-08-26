@@ -104,4 +104,18 @@ improvement(c) = J(B0) - J(c)
 
 ## 6. Extension boundary
 
-双原语 Brief、自动状态识别、在线学习策略和生成式 renderer 必须作为独立版本进入，不能静默改变当前 policy。离线 calibration 只能输出版本化建议参数，不能自动覆盖生产配置。
+双原语 Brief、自动状态识别和生成式 renderer 必须作为独立版本进入，不能静默改变当前 offline policy。
+在线推理 v2 已作为 `src/retrace_selector/online_inference_v2/` 独立边界实现，并由仓库根目录的在线推理
+技术方案描述；它可以持久化三层 User Profile（主观偏好、评估需要、当前生效策略），但不能反向修改本离线
+engine 的 Registry、证据门槛、`beta`、`epsilon` 或历史选择。离线 calibration 仍只能输出版本化建议参数，
+不能自动覆盖生产配置。
+
+## 7. Online inference v2 implementation boundary
+
+在线 v2 的场景化评测是固定的两轮三题协议：`submit_occasion_baseline` 在首次 exposure 前保存
+Criteria/State/Action 基线，`submit_evaluation` 在 chain 结束时保存同三维 POST 结果并生成 POST 快照。
+两轮之间的 `PRE` 只由真实 `expose()` 产生；`OBSERVER_PROBE` 不属于 baseline/post 评测。
+
+用户自主调节通过 `get_user_preferences` / `set_user_preferences` 提供频率、力度、`AUTO/PAUSED` 和
+`manual_lock`；Profile 通过 `get_user_profile` 返回三层持久化对象。完整 baseline+POST chain 达到至少 3 个
+已关闭 chain 后，`AdaptiveController` 才以每次最多 `±0.08` 的小步长更新 assessed need 和 effective policy。

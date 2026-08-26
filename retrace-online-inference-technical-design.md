@@ -720,6 +720,34 @@ epsilon、eta、evidence_floor_when_limited、τ、λW、semantic_hint_soft_marg
 
 ### 10.3 用户可调策略与三维结果自适应
 
+当前实现将用户测量和自适应固定为“**两轮 × 三个问题**”协议：两轮分别是
+Occasion 确认后的 `OCCASION_BASELINE` 和互动结束后的 `POST_EVALUATION`；每一轮都围绕同一个
+decision chain 的 Criteria、State、Action 各问一个情境化问题。`OBSERVER_PROBE` 是运行中的可选补充，
+不属于这两轮，也不触发用户画像自适应。
+
+| 轮次 | 在线接口 | `evaluation_kind` / `measurement_point` | 用途 | 是否触发自适应 |
+|---|---|---|---|---|
+| 第 1 轮 | `submit_occasion_baseline` | `OCCASION_BASELINE` / `BASELINE` | 首次 exposure 前记录当前情境下的 C/S/A 基线 | 否 |
+| 第 2 轮 | `submit_evaluation` | `POST_EVALUATION` / `POST` | 互动结束后记录同一情境下的 C/S/A 结果 | 是，但必须满足完整历史条件 |
+
+两轮都使用 `CSA-LIKERT-V1` 的整数 `1–5` 量表，并允许逐题回答或跳过；第一轮接口还支持显式超时。
+跳过或超时保存为缺失，不能按低分处理。第一轮的问卷记录不等同于 `PRE` 快照：`PRE` 仍由真实
+`INTERVENTION_EXPOSURE` 之前的稳定状态生成；第二轮提交后才生成 `POST` 快照并关闭 chain。只有同一用户、
+同一 chain 同时存在完整第一轮和第二轮、三维均回答且 chain 已关闭时，才计为一个完整 chain。
+
+用户 Profile 在这个协议中的职责分工如下：
+
+| Profile 层 | 代码对象 | 写入来源 | 作用 |
+|---|---|---|---|
+| 主观偏好 `subjective_preference` | `UserPolicyPreference` | `set_user_preferences` / `POLICY_PREFERENCE_UPDATED` | 用户主动设置的频率、力度、`AUTO/PAUSED` 和 `manual_lock` |
+| 评估需要 `assessed_need` | `UserAssessedNeed` | 完整 baseline→POST 后的 `ADAPTATION_UPDATE` | 记录残余 C/S/A 缺口、进步、反馈、负担和有效历史 |
+| 当前生效策略 `effective_policy` | `UserPolicyPreference` | 用户设置或 Adaptive Controller | 本次在线 Selector 实际使用的偏好 |
+
+三层 Profile 持久化在 `online_user_profiles`；`online_user_preferences` 仅作为旧调用兼容的
+effective-policy 索引。`get_user_profile(user_id)` 返回三层完整对象，`get_user_preferences(user_id)`
+仍返回 effective policy。用户主动设置只更新 subjective/effective，不抹掉 assessed_need；自适应只更新
+assessed_need/effective，不覆盖用户的 subjective preference。
+
 Selector 的全局参数、Registry 和证据约束仍然冻结；用户可以通过 ReTrace 面板调整自己的干预偏好。该偏好不是新的策略类型，也不允许用户绕过证据、family gate、`TARGET_REACHED` 或 `PRESENT_CHOICES` 规则。
 
 面板提供三个操作点：
