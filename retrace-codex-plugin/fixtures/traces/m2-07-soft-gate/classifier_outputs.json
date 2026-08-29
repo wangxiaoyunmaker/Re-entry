@@ -1,0 +1,5 @@
+{
+  "m2-07-u1":{"sameIssue":true,"issueSummary":"背景图显示","intent":"INITIAL_REQUEST","reportsTargetUnmet":false,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"MEDIUM"},
+  "m2-07-u2":{"sameIssue":true,"issueSummary":"背景图显示","intent":"CORRECTIVE","reportsTargetUnmet":true,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"HIGH"},
+  "m2-07-u3":{"sameIssue":true,"issueSummary":"背景图显示","intent":"CORRECTIVE","reportsTargetUnmet":true,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"HIGH"}
+}

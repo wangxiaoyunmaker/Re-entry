@@ -1,0 +1,3 @@
+[
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-01-u1","received_at":"2026-08-28T00:00:01.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-01","turn_id":"u1","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-01","turn_id":"u1","prompt":"背景图还是没显示，帮我修一下。"}}
+]

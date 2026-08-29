@@ -1,0 +1,5 @@
+[
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-07-u1","received_at":"2026-08-28T00:00:01.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-07","turn_id":"u1","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-07","turn_id":"u1","prompt":"请实现背景图显示。"}},
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-07-u2","received_at":"2026-08-28T00:00:02.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-07","turn_id":"u2","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-07","turn_id":"u2","prompt":"背景图还是没显示，再检查一下。"}},
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-07-u3","received_at":"2026-08-28T00:00:03.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-07","turn_id":"u3","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-07","turn_id":"u3","prompt":"还是不对，再改一下\n不要改动其他功能。"}}
+]

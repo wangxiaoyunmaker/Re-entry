@@ -1,0 +1,5 @@
+{
+  "sessionCount": 1,
+  "rawEventCount": 2,
+  "eventTypes": ["SESSION_START", "USER_PROMPT"]
+}

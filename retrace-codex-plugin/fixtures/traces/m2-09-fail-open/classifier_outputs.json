@@ -1,0 +1,3 @@
+{
+  "m2-09-u1":{"sameIssue":true,"issueSummary":"还是不对","intent":"CORRECTIVE","reportsTargetUnmet":true,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"LOW"}
+}

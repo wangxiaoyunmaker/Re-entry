@@ -1,0 +1,20 @@
+{
+  "name": "retrace",
+  "version": "0.2.0+codex.20260829022406",
+  "description": "Invited cognitive re-entry support for stalled direct delegation in Codex.",
+  "author": {
+    "name": "Local developer"
+  },
+  "interface": {
+    "displayName": "ReTrace",
+    "shortDescription": "Pause repeated correction, rebuild understanding, then continue.",
+    "longDescription": "A research plugin that captures Codex lifecycle events and provides a local runtime foundation for invited cognitive re-entry.",
+    "developerName": "Research Prototype",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": "Open ReTrace and show the current runtime status."
+  },
+  "mcpServers": "./.mcp.json"
+}

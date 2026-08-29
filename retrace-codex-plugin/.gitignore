@@ -1,0 +1,11 @@
+node_modules/
+# Build output is part of the installable plugin because .mcp.json points at
+# server/dist and the MCP resource serves web/dist/index.html.
+server/dist/*.tsbuildinfo
+web/dist/*.tsbuildinfo
+# The participant-facing MCP runtime is vendored under server/node_modules so
+# a marketplace Git install does not require a package-manager bootstrap.
+!server/node_modules/
+!server/node_modules/**
+*.sqlite3
+.retrace-data/

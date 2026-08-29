@@ -1,0 +1,24 @@
+[
+  {
+    "schema_version": "retrace-raw-hook-event-v2",
+    "event_id": "fixture-session-start",
+    "received_at": "2026-08-28T00:00:00.000Z",
+    "hook_event_name": "SessionStart",
+    "session_id": "fixture-session",
+    "turn_id": null,
+    "tool_use_id": null,
+    "cwd": "/tmp/fixture-project",
+    "payload": { "source": "startup", "session_id": "fixture-session" }
+  },
+  {
+    "schema_version": "retrace-raw-hook-event-v2",
+    "event_id": "fixture-prompt-1",
+    "received_at": "2026-08-28T00:00:01.000Z",
+    "hook_event_name": "UserPromptSubmit",
+    "session_id": "fixture-session",
+    "turn_id": "turn-1",
+    "tool_use_id": null,
+    "cwd": "/tmp/fixture-project",
+    "payload": { "prompt": "请检查背景图为什么没有显示", "turn_id": "turn-1" }
+  }
+]

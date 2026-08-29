@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "retrace": {
+      "command": "node",
+      "args": ["./server/dist/index.js"]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+[
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-04-u1","received_at":"2026-08-28T00:00:01.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-04","turn_id":"u1","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-04","turn_id":"u1","prompt":"背景图还是没显示，帮我修一下。"}},
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-04-u2","received_at":"2026-08-28T00:00:02.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-04","turn_id":"u2","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-04","turn_id":"u2","prompt":"先不要继续改，看看为什么资源请求是 404，比较一下构建前后的路径。"}}
+]

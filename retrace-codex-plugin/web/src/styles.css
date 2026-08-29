@@ -1,0 +1,57 @@
+:root {
+  color: #1c1c1c;
+  background: #f7f7f5;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; }
+.panel { max-width: 520px; margin: 0 auto; padding: 22px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; }
+.eyebrow { margin: 0 0 6px; color: #757575; font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.04em; }
+.status-dot { width: 11px; height: 11px; margin-top: 7px; border-radius: 50%; background: #b8b8b8; }
+.status-dot.online { background: #2e9d68; box-shadow: 0 0 0 4px #dcefe5; }
+.intro { margin: 18px 0; color: #575757; line-height: 1.55; }
+.card { padding: 6px 16px; border: 1px solid #e1e1dd; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px #00000008; }
+.row { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid #eeeeeb; font-size: 13px; }
+.row:last-child { border-bottom: 0; }
+.value { color: #565656; text-align: right; overflow-wrap: anywhere; }
+.muted, footer { color: #818181; font-size: 12px; }
+footer { margin-top: 18px; line-height: 1.5; }
+.notice { display: grid; gap: 7px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #efefeb; color: #60605d; font-size: 12px; line-height: 1.45; }
+.notice.error { background: #fff0ed; color: #943f31; }
+.invitation { margin-top: 14px; padding: 16px; border: 1px solid #d9d9d2; border-radius: 14px; background: #fff; }
+.invitation h2 { margin: 0; font-size: 16px; line-height: 1.4; }
+.invitation p { color: #575757; font-size: 13px; line-height: 1.55; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.secondary { background: #e8e8e3; color: #222; }
+.quiet { background: transparent; color: #686864; }
+button { width: fit-content; padding: 7px 11px; border: 0; border-radius: 8px; background: #1c1c1c; color: white; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+.context-review { margin-top: 14px; padding: 16px; border: 1px solid #d9d9d2; border-radius: 14px; background: #fff; }
+.context-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.context-heading h2 { margin: 0; font-size: 17px; line-height: 1.35; }
+.context-review h3 { margin: 20px 0 8px; font-size: 13px; }
+.context-item { margin: 8px 0; padding: 11px; border: 1px solid #e7e7e1; border-radius: 10px; background: #fafaf8; }
+.context-item p { margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.context-item textarea, .add-evidence textarea { width: 100%; resize: vertical; padding: 8px; border: 1px solid #d5d5ce; border-radius: 8px; font: inherit; font-size: 13px; }
+.add-evidence select { width: 100%; padding: 8px; border: 1px solid #d5d5ce; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; }
+.item-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; color: #85857f; font-size: 10px; overflow-wrap: anywhere; }
+.provenance { margin-top: 8px; color: #6f6f69; font-size: 10px; }
+.provenance code { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.item-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.item-actions button { padding: 5px 8px; font-size: 11px; }
+.add-evidence { display: grid; gap: 7px; margin-top: 9px; }
+.error-text { color: #943f31; }
+.survey { display: grid; gap: 12px; margin-top: 14px; padding: 16px; border: 1px solid #d9d9d2; border-radius: 14px; background: #fff; }
+.survey h2, .prompt-panel h2 { margin: 0; font-size: 17px; }
+.survey-question { display: grid; grid-template-columns: 1fr 86px; align-items: center; gap: 10px; font-size: 13px; line-height: 1.45; }
+.survey-question select { padding: 7px; border: 1px solid #d5d5ce; border-radius: 8px; background: #fff; }
+.investigate { background: #5c5c56; }
+.investigation-item { background: #f4f4ef; }
+.investigation-item pre, .prompt-text { max-height: 320px; overflow: auto; white-space: pre-wrap; font: inherit; font-size: 12px; line-height: 1.5; }
+.prompt-panel { display: grid; gap: 11px; margin-top: 14px; padding: 16px; border: 1px solid #bfcfc4; border-radius: 14px; background: #fff; }
+.prompt-rationale { display: grid; grid-template-columns: 110px 1fr; gap: 7px 10px; padding: 11px; border-radius: 9px; background: #f3f6f2; font-size: 12px; line-height: 1.45; }
+.prompt-panel textarea { width: 100%; resize: vertical; padding: 9px; border: 1px solid #d5d5ce; border-radius: 8px; font: inherit; font-size: 12px; line-height: 1.5; }

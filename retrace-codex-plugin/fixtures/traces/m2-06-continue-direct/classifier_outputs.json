@@ -1,0 +1,4 @@
+{
+  "m2-06-u1":{"sameIssue":true,"issueSummary":"背景图还是没显示","intent":"CORRECTIVE","reportsTargetUnmet":true,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"HIGH"},
+  "m2-06-u2":{"sameIssue":true,"issueSummary":"背景图还是没显示","intent":"CORRECTIVE","reportsTargetUnmet":true,"informationGain":{"newObservation":false,"newRequirement":false,"newEvidence":false,"investigationDirection":false},"confidence":"HIGH"}
+}

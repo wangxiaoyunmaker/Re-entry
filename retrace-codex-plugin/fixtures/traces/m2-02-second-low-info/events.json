@@ -1,0 +1,4 @@
+[
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-02-u1","received_at":"2026-08-28T00:00:01.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-02","turn_id":"u1","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-02","turn_id":"u1","prompt":"背景图还是没显示，帮我修一下。"}},
+  {"schema_version":"retrace-raw-hook-event-v2","event_id":"m2-02-u2","received_at":"2026-08-28T00:00:02.000Z","hook_event_name":"UserPromptSubmit","session_id":"m2-02","turn_id":"u2","cwd":"/tmp/fixture-project","payload":{"session_id":"m2-02","turn_id":"u2","prompt":"还是没有，再检查一下。"}}
+]
